@@ -28,7 +28,9 @@ export default function CheckoutPage() {
 
   const [mounted, setMounted] = useState(false);
 
-  const [activeMode, setActiveMode] = useState("login"); // login | signup | guest
+  const [activeMode, setActiveMode] = useState("login");
+  const [showOrderForm, setShowOrderForm] = useState(null); // null | "guest" | "customer"
+
   const [authError, setAuthError] = useState("");
   const [authSuccess, setAuthSuccess] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -93,6 +95,12 @@ export default function CheckoutPage() {
     }
   }, [customer]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowOrderForm("customer");
+    }
+  }, [isAuthenticated]);
+
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
     setLoginForm((prev) => ({
@@ -132,6 +140,12 @@ export default function CheckoutPage() {
       deliveryAddress: value === "PICKUP" ? "" : prev.deliveryAddress,
       deliveryNotes: value === "PICKUP" ? "" : prev.deliveryNotes,
     }));
+  };
+
+  const openGuestForm = () => {
+    setAuthError("");
+    setAuthSuccess("");
+    setShowOrderForm("guest");
   };
 
   const fetchLoggedInCustomer = async () => {
@@ -190,7 +204,7 @@ export default function CheckoutPage() {
         }));
       }
 
-      setActiveMode("guest");
+      setShowOrderForm("customer");
     } catch (error) {
       setAuthError("Failed to login.");
     } finally {
@@ -245,7 +259,7 @@ export default function CheckoutPage() {
         }));
       }
 
-      setActiveMode("guest");
+      setShowOrderForm("customer");
     } catch (error) {
       setAuthError("Failed to sign up.");
     } finally {
@@ -324,6 +338,10 @@ export default function CheckoutPage() {
     );
   }
 
+  const isGuestFormOpen = showOrderForm === "guest";
+  const isCustomerFormOpen = showOrderForm === "customer" || isAuthenticated;
+  const shouldShowAuthBox = !isGuestFormOpen && !isCustomerFormOpen;
+
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-10 text-white md:px-6 md:py-12">
       <div className="mx-auto max-w-6xl">
@@ -339,7 +357,7 @@ export default function CheckoutPage() {
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
           <div>
             <div className="rounded-[28px] border border-white/10 bg-[#111] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:p-6">
-              {!isAuthenticated && (
+              {shouldShowAuthBox && (
                 <div className="mb-6 grid grid-cols-2 gap-4">
                   <button
                     type="button"
@@ -394,14 +412,14 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              {!isAuthenticated && activeMode === "login" && (
+              {shouldShowAuthBox && activeMode === "login" && (
                 <div className="space-y-6">
                   <div className="rounded-[22px] border border-white/10 bg-black p-6 shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-white">Login</h2>
                       <button
                         type="button"
-                        onClick={() => setActiveMode("guest")}
+                        onClick={openGuestForm}
                         className="text-sm text-white/60 transition hover:text-white"
                       >
                         Order as Guest
@@ -461,14 +479,14 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {!isAuthenticated && activeMode === "signup" && (
+              {shouldShowAuthBox && activeMode === "signup" && (
                 <div className="space-y-6">
                   <div className="rounded-[22px] border border-white/10 bg-black p-6 shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-white">Sign Up</h2>
                       <button
                         type="button"
-                        onClick={() => setActiveMode("guest")}
+                        onClick={openGuestForm}
                         className="text-sm text-white/60 transition hover:text-white"
                       >
                         Order as Guest
@@ -530,26 +548,36 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {(isAuthenticated || activeMode === "guest") && (
-                <form onSubmit={handlePlaceOrder} className="space-y-6" autoComplete="off">
+              {(isGuestFormOpen || isCustomerFormOpen) && (
+                <form
+                  onSubmit={handlePlaceOrder}
+                  className="space-y-6"
+                  autoComplete="off"
+                >
                   <div className="rounded-[22px] border border-white/10 bg-black p-6 shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-white">
-                        {isAuthenticated ? "Your Details" : "Order as Guest"}
+                        {isGuestFormOpen ? "Order as Guest" : "Your Details"}
                       </h2>
 
-                      {!isAuthenticated && (
+                      {isGuestFormOpen && !isAuthenticated && (
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
-                            onClick={() => setActiveMode("login")}
+                            onClick={() => {
+                              setShowOrderForm(null);
+                              setActiveMode("login");
+                            }}
                             className="text-sm text-white/60 transition hover:text-white"
                           >
                             Login
                           </button>
                           <button
                             type="button"
-                            onClick={() => setActiveMode("signup")}
+                            onClick={() => {
+                              setShowOrderForm(null);
+                              setActiveMode("signup");
+                            }}
                             className="text-sm text-white/60 transition hover:text-white"
                           >
                             Sign Up
@@ -559,9 +587,9 @@ export default function CheckoutPage() {
                     </div>
 
                     <p className="mb-5 text-sm text-white/60">
-                      {isAuthenticated
-                        ? "Confirm your order details before placing the order."
-                        : "Continue without creating an account and place your order as guest."}
+                      {isGuestFormOpen
+                        ? "Continue without creating an account and place your order as guest."
+                        : "Confirm your order details before placing the order."}
                     </p>
 
                     {checkoutError && (
@@ -684,7 +712,6 @@ export default function CheckoutPage() {
                               name="deliveryAddress"
                               value={form.deliveryAddress}
                               onChange={handleGuestChange}
-                              autoComplete="street-address"
                               className="min-h-[110px] w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                               placeholder="Enter full delivery address"
                             />
@@ -709,8 +736,10 @@ export default function CheckoutPage() {
                       {form.fulfillmentType === "PICKUP" && (
                         <div className="rounded-2xl border border-white/10 bg-[#111] px-4 py-4 text-sm text-white/65">
                           You selected{" "}
-                          <span className="font-semibold text-white">Pickup</span>.
-                          No delivery address is required.
+                          <span className="font-semibold text-white">
+                            Pickup
+                          </span>
+                          . No delivery address is required.
                         </div>
                       )}
                     </div>
@@ -781,7 +810,8 @@ export default function CheckoutPage() {
 
                       {item.addons?.length > 0 && (
                         <p className="mt-1 text-xs leading-5 text-white/45">
-                          Addons: {item.addons.map((addon) => addon.name).join(", ")}
+                          Addons:{" "}
+                          {item.addons.map((addon) => addon.name).join(", ")}
                         </p>
                       )}
 
@@ -802,7 +832,9 @@ export default function CheckoutPage() {
               <div className="border-t border-white/10 pt-4">
                 <div className="flex items-center justify-between">
                   <span>Total Items</span>
-                  <span className="font-medium text-white">{totalQuantity}</span>
+                  <span className="font-medium text-white">
+                    {totalQuantity}
+                  </span>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between">
