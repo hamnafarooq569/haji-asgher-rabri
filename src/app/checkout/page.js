@@ -62,6 +62,19 @@ export default function CheckoutPage() {
     dispatch(hydrateCartFromStorage());
     dispatch(clearCustomerCheckoutError());
     dispatch(clearPlacedOrder());
+
+    setLoginForm({
+      email: "",
+      password: "",
+    });
+
+    setSignupForm({
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+    });
+
     setMounted(true);
   }, [dispatch]);
 
@@ -334,6 +347,7 @@ export default function CheckoutPage() {
                       setActiveMode("login");
                       setAuthError("");
                       setAuthSuccess("");
+                      setLoginForm({ email: "", password: "" });
                     }}
                     className={`rounded-2xl px-5 py-3.5 text-base font-semibold transition ${
                       activeMode === "login"
@@ -350,6 +364,12 @@ export default function CheckoutPage() {
                       setActiveMode("signup");
                       setAuthError("");
                       setAuthSuccess("");
+                      setSignupForm({
+                        name: "",
+                        email: "",
+                        phone: "",
+                        password: "",
+                      });
                     }}
                     className={`rounded-2xl px-5 py-3.5 text-base font-semibold transition ${
                       activeMode === "signup"
@@ -388,11 +408,33 @@ export default function CheckoutPage() {
                       </button>
                     </div>
 
-                    <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    <form
+                      onSubmit={handleLoginSubmit}
+                      className="space-y-4"
+                      autoComplete="off"
+                    >
+                      <input
+                        type="text"
+                        name="fake_username"
+                        autoComplete="username"
+                        className="hidden"
+                        tabIndex={-1}
+                      />
+
+                      <input
+                        type="password"
+                        name="fake_password"
+                        autoComplete="new-password"
+                        className="hidden"
+                        tabIndex={-1}
+                      />
+
                       <input
                         name="email"
+                        type="email"
                         value={loginForm.email}
                         onChange={handleLoginChange}
+                        autoComplete="off"
                         className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                         placeholder="Enter your email"
                       />
@@ -402,6 +444,7 @@ export default function CheckoutPage() {
                         type="password"
                         value={loginForm.password}
                         onChange={handleLoginChange}
+                        autoComplete="new-password"
                         className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                         placeholder="Enter your password"
                       />
@@ -432,19 +475,26 @@ export default function CheckoutPage() {
                       </button>
                     </div>
 
-                    <form onSubmit={handleSignupSubmit} className="space-y-4">
+                    <form
+                      onSubmit={handleSignupSubmit}
+                      className="space-y-4"
+                      autoComplete="off"
+                    >
                       <input
                         name="name"
                         value={signupForm.name}
                         onChange={handleSignupChange}
+                        autoComplete="off"
                         className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                         placeholder="Enter your full name"
                       />
 
                       <input
                         name="email"
+                        type="email"
                         value={signupForm.email}
                         onChange={handleSignupChange}
+                        autoComplete="off"
                         className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                         placeholder="Enter your email"
                       />
@@ -453,6 +503,7 @@ export default function CheckoutPage() {
                         name="phone"
                         value={signupForm.phone}
                         onChange={handleSignupChange}
+                        autoComplete="off"
                         className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                         placeholder="Enter your phone number"
                       />
@@ -462,6 +513,7 @@ export default function CheckoutPage() {
                         type="password"
                         value={signupForm.password}
                         onChange={handleSignupChange}
+                        autoComplete="new-password"
                         className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                         placeholder="Create a password"
                       />
@@ -479,7 +531,7 @@ export default function CheckoutPage() {
               )}
 
               {(isAuthenticated || activeMode === "guest") && (
-                <form onSubmit={handlePlaceOrder} className="space-y-6">
+                <form onSubmit={handlePlaceOrder} className="space-y-6" autoComplete="off">
                   <div className="rounded-[22px] border border-white/10 bg-black p-6 shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-white">
@@ -527,6 +579,7 @@ export default function CheckoutPage() {
                           name="customerName"
                           value={form.customerName}
                           onChange={handleGuestChange}
+                          autoComplete="name"
                           className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                           placeholder="Enter full name"
                         />
@@ -540,6 +593,7 @@ export default function CheckoutPage() {
                           name="mobile"
                           value={form.mobile}
                           onChange={handleGuestChange}
+                          autoComplete="tel"
                           className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                           placeholder="Enter phone number"
                         />
@@ -553,6 +607,7 @@ export default function CheckoutPage() {
                           name="altMobile"
                           value={form.altMobile}
                           onChange={handleGuestChange}
+                          autoComplete="off"
                           className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                           placeholder="Enter alternate phone number"
                         />
@@ -564,8 +619,10 @@ export default function CheckoutPage() {
                         </label>
                         <input
                           name="email"
+                          type="email"
                           value={form.email}
                           onChange={handleGuestChange}
+                          autoComplete="email"
                           className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                           placeholder="Enter email address"
                         />
@@ -613,6 +670,7 @@ export default function CheckoutPage() {
                               name="nearestLandmark"
                               value={form.nearestLandmark}
                               onChange={handleGuestChange}
+                              autoComplete="off"
                               className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                               placeholder="Enter nearest landmark"
                             />
@@ -626,6 +684,7 @@ export default function CheckoutPage() {
                               name="deliveryAddress"
                               value={form.deliveryAddress}
                               onChange={handleGuestChange}
+                              autoComplete="street-address"
                               className="min-h-[110px] w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                               placeholder="Enter full delivery address"
                             />
@@ -639,6 +698,7 @@ export default function CheckoutPage() {
                               name="deliveryNotes"
                               value={form.deliveryNotes}
                               onChange={handleGuestChange}
+                              autoComplete="off"
                               className="min-h-[130px] w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
                               placeholder="Type special instructions here..."
                             />
@@ -648,7 +708,9 @@ export default function CheckoutPage() {
 
                       {form.fulfillmentType === "PICKUP" && (
                         <div className="rounded-2xl border border-white/10 bg-[#111] px-4 py-4 text-sm text-white/65">
-                          You selected <span className="font-semibold text-white">Pickup</span>. No delivery address is required.
+                          You selected{" "}
+                          <span className="font-semibold text-white">Pickup</span>.
+                          No delivery address is required.
                         </div>
                       )}
                     </div>
@@ -719,8 +781,7 @@ export default function CheckoutPage() {
 
                       {item.addons?.length > 0 && (
                         <p className="mt-1 text-xs leading-5 text-white/45">
-                          Addons:{" "}
-                          {item.addons.map((addon) => addon.name).join(", ")}
+                          Addons: {item.addons.map((addon) => addon.name).join(", ")}
                         </p>
                       )}
 
