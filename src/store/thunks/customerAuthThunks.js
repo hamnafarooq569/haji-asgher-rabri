@@ -1,40 +1,27 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import customerAuthService from "@/services/customerAuthService";
 
-export const startCustomerAuth = createAsyncThunk(
-  "customerAuth/startCustomerAuth",
+export const loginCustomer = createAsyncThunk(
+  "customerAuth/loginCustomer",
   async (payload, thunkAPI) => {
     try {
-      return await customerAuthService.start(payload);
+      return await customerAuthService.login(payload);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Failed to send OTP"
+        error.response?.data?.message || "Failed to login"
       );
     }
   }
 );
 
-export const verifyCustomerOtp = createAsyncThunk(
-  "customerAuth/verifyCustomerOtp",
+export const registerCustomer = createAsyncThunk(
+  "customerAuth/registerCustomer",
   async (payload, thunkAPI) => {
     try {
-      return await customerAuthService.verifyOtp(payload);
+      return await customerAuthService.register(payload);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Failed to verify OTP"
-      );
-    }
-  }
-);
-
-export const resendCustomerOtp = createAsyncThunk(
-  "customerAuth/resendCustomerOtp",
-  async (payload, thunkAPI) => {
-    try {
-      return await customerAuthService.resendOtp(payload);
-    } catch (error) {
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Failed to resend OTP"
+        error.response?.data?.message || "Failed to register"
       );
     }
   }

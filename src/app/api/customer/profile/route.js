@@ -4,7 +4,7 @@ import { getCustomerFromRequest } from "@/lib/customer-auth";
 
 export async function GET() {
   try {
-    const auth = await getCustomerAuth();
+    const auth = await getCustomerFromRequest();
 
     if (!auth) {
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function GET() {
 
 export async function PUT(req) {
   try {
-    const auth = await getCustomerAuth();
+    const auth = await getCustomerFromRequest();
 
     if (!auth) {
       return NextResponse.json(
@@ -72,7 +72,11 @@ export async function PUT(req) {
 
     const updatedCustomer = await prisma.customer.update({
       where: { id: auth.id },
-      data: { name, email, phone },
+      data: {
+        name,
+        email,
+        phone,
+      },
       select: {
         id: true,
         name: true,

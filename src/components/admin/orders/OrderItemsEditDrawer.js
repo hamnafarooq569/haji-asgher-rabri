@@ -54,7 +54,7 @@ export default function OrderItemsEditDrawer({
         id: product?.id,
         name: product?.name,
         type: product?.category?.name || product?.type?.name || "Product",
-        image: product?.image || product?.thumbnail || "",
+        image: product?.image || product?.thumbnail || product?.imageUrl || "",
         price:
           Number(firstVariant?.price || 0) + Number(product?.basePrice || 0),
         basePrice: Number(product?.basePrice || 0),
@@ -75,6 +75,7 @@ export default function OrderItemsEditDrawer({
   }, [selectedItems]);
 
   const total = subtotal;
+  const isPickup = order?.fulfillmentType === "PICKUP";
 
   const handleAddProduct = (product) => {
     if (!product?.id || !product?.firstVariant?.id) return;
@@ -215,6 +216,13 @@ export default function OrderItemsEditDrawer({
               disabled
               className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-sm outline-none"
             />
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            Fulfillment Type:{" "}
+            <span className="font-semibold">
+              {isPickup ? "Pickup" : "Delivery"}
+            </span>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">

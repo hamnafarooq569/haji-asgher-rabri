@@ -31,6 +31,8 @@ const formatStatusLabel = (value) => {
     CASH: "Cash",
     CARD: "Card",
     ONLINE: "Online",
+    PICKUP: "Pickup",
+    DELIVERY: "Delivery",
   };
 
   return map[value] || value;
@@ -74,6 +76,23 @@ const getPaymentStatusBadge = (status) => {
   );
 };
 
+const getFulfillmentBadge = (type) => {
+  const styles = {
+    PICKUP: "bg-indigo-50 text-indigo-700",
+    DELIVERY: "bg-cyan-50 text-cyan-700",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+        styles[type] || "bg-slate-100 text-slate-700"
+      }`}
+    >
+      {formatStatusLabel(type)}
+    </span>
+  );
+};
+
 function StatusWorkflowButtons({ order, onStatusChange }) {
   const currentStatus = order?.orderStatus || order?.status;
 
@@ -89,7 +108,7 @@ function StatusWorkflowButtons({ order, onStatusChange }) {
         <button
           type="button"
           disabled
-          className={`${baseBtn} bg-rose-100 text-rose-500 cursor-not-allowed`}
+          className={`${baseBtn} cursor-not-allowed bg-rose-100 text-rose-500`}
         >
           <Clock3 size={14} />
           Pending
@@ -98,7 +117,7 @@ function StatusWorkflowButtons({ order, onStatusChange }) {
         <button
           type="button"
           disabled
-          className={`${baseBtn} bg-rose-100 text-rose-500 cursor-not-allowed`}
+          className={`${baseBtn} cursor-not-allowed bg-rose-100 text-rose-500`}
         >
           <Check size={14} />
           Confirmed
@@ -107,7 +126,7 @@ function StatusWorkflowButtons({ order, onStatusChange }) {
         <button
           type="button"
           disabled
-          className={`${baseBtn} bg-rose-100 text-rose-500 cursor-not-allowed`}
+          className={`${baseBtn} cursor-not-allowed bg-rose-100 text-rose-500`}
         >
           <Check size={14} />
           Cooking
@@ -116,7 +135,7 @@ function StatusWorkflowButtons({ order, onStatusChange }) {
         <button
           type="button"
           disabled
-          className={`${baseBtn} bg-rose-100 text-rose-500 cursor-not-allowed`}
+          className={`${baseBtn} cursor-not-allowed bg-rose-100 text-rose-500`}
         >
           <Check size={14} />
           Delivered
@@ -131,7 +150,7 @@ function StatusWorkflowButtons({ order, onStatusChange }) {
     const isCurrent = currentStatus === status;
 
     if (isPast) {
-      return "bg-slate-200 text-slate-500 cursor-not-allowed";
+      return "cursor-not-allowed bg-slate-200 text-slate-500";
     }
 
     if (isCurrent) {
@@ -239,6 +258,11 @@ export default function OrdersTable({
         header: "Phone",
         cell: ({ row }) =>
           row.original?.customerPhone || row.original?.mobile || "-",
+      },
+      {
+        accessorKey: "fulfillmentType",
+        header: "Fulfillment",
+        cell: ({ row }) => getFulfillmentBadge(row.original?.fulfillmentType),
       },
       {
         accessorKey: "paymentMethod",
@@ -409,7 +433,7 @@ export default function OrdersTable({
         columns={columns}
         data={orders}
         divClass="overflow-x-auto"
-        tableClass="table min-w-[1900px]"
+        tableClass="table min-w-[2050px]"
         thtrClass=""
         trClass=""
         thClass="whitespace-nowrap"

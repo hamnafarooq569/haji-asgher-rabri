@@ -54,6 +54,7 @@ async function getInvoice(req, ctx) {
       orderId: order.id,
       orderNumber: order.orderNumber,
       createdAt: order.createdAt,
+      fulfillmentType: order.fulfillmentType,
       status: order.status,
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,

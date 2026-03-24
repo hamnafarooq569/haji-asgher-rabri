@@ -17,7 +17,7 @@ import {
 import { clearSelectedOrder } from "@/store/slices/orderSlice";
 import axiosInstance from "@/lib/axios";
 
-export default function PendingOrdersPage() {
+export default function CancelledOrdersPage() {
   const dispatch = useDispatch();
 
   const { orders, loading, error, selectedOrder, detailsLoading } = useSelector(
@@ -103,9 +103,16 @@ export default function PendingOrdersPage() {
 
   const openOrderDocumentWindow = (payload, mode = "invoice") => {
     const data = payload?.invoice || payload?.print || payload || {};
-    const customer = data?.customer || {};
-    const items = Array.isArray(data?.items) ? data.items : [];
-    const totals = data?.totals || {};
+    const customer = payload?.customer || data?.customer || {};
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+      : Array.isArray(data?.items)
+      ? data.items
+      : [];
+    const totals = payload?.totals || data?.totals || {};
+
+    const fulfillmentType = data?.fulfillmentType || "DELIVERY";
+    const isPickup = fulfillmentType === "PICKUP";
 
     const rowsHtml = items
       .map(
@@ -122,10 +129,24 @@ export default function PendingOrdersPage() {
       )
       .join("");
 
+    const fulfillmentHtml = isPickup
+      ? `
+        <p><strong>Order Type:</strong> Pickup</p>
+        <p>Customer will collect the order from store.</p>
+      `
+      : `
+        <p><strong>Order Type:</strong> Delivery</p>
+        <p><strong>Address:</strong> ${customer.deliveryAddress || "-"}</p>
+        <p><strong>Landmark:</strong> ${customer.nearestLandmark || "-"}</p>
+        <p><strong>Notes:</strong> ${customer.deliveryNotes || "-"}</p>
+      `;
+
     const html = `
       <html>
         <head>
-          <title>${mode === "print" ? "Order Print" : "Invoice"} - ${data.orderNumber || ""}</title>
+          <title>${mode === "print" ? "Order Print" : "Invoice"} - ${
+      data.orderNumber || ""
+    }</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -136,7 +157,7 @@ export default function PendingOrdersPage() {
           <p>Order # ${data.orderNumber || "-"}</p>
           <p>Customer: ${customer.customerName || "-"}</p>
           <p>Mobile: ${customer.mobile || "-"}</p>
-          <p>Address: ${customer.deliveryAddress || "-"}</p>
+          ${fulfillmentHtml}
           <table>
             <thead>
               <tr>
@@ -252,21 +273,25 @@ export default function PendingOrdersPage() {
       const existingItems =
         customerEditOrder?.items?.map((item) => ({
           productId: item?.productId || item?.product?.id,
-          variantId: item?.variantId || item?.variant?.id,
+          variantId: item?.variantId || item?.variant?.id || null,
           quantity: Number(item?.quantity || 1),
           addonIds: Array.isArray(item?.addons)
             ? item.addons.map((addon) => addon?.addonId || addon?.id).filter(Boolean)
             : [],
         })) || [];
 
+      const fulfillmentType = formData.fulfillmentType || "DELIVERY";
+      const isPickup = fulfillmentType === "PICKUP";
+
       const payload = {
         customerName: formData.customerName,
         mobile: formData.mobile,
         altMobile: formData.altMobile || "",
         email: formData.email || "",
-        nearestLandmark: formData.nearestLandmark || "",
-        deliveryAddress: formData.deliveryAddress,
-        deliveryNotes: formData.deliveryNotes || "",
+        fulfillmentType,
+        nearestLandmark: isPickup ? "" : formData.nearestLandmark || "",
+        deliveryAddress: isPickup ? "" : formData.deliveryAddress || "",
+        deliveryNotes: isPickup ? "" : formData.deliveryNotes || "",
         paymentMethod: formData.paymentMethod,
         paymentStatus: formData.paymentStatus,
         status: formData.orderStatus,
@@ -303,14 +328,18 @@ export default function PendingOrdersPage() {
     try {
       setItemsEditLoading(true);
 
+      const fulfillmentType = itemsEditOrder.fulfillmentType || "DELIVERY";
+      const isPickup = fulfillmentType === "PICKUP";
+
       const payload = {
         customerName: itemsEditOrder.customerName,
         mobile: itemsEditOrder.mobile,
         altMobile: itemsEditOrder.altMobile || "",
         email: itemsEditOrder.email || "",
-        nearestLandmark: itemsEditOrder.nearestLandmark || "",
-        deliveryAddress: itemsEditOrder.deliveryAddress,
-        deliveryNotes: itemsEditOrder.deliveryNotes || "",
+        fulfillmentType,
+        nearestLandmark: isPickup ? "" : itemsEditOrder.nearestLandmark || "",
+        deliveryAddress: isPickup ? "" : itemsEditOrder.deliveryAddress || "",
+        deliveryNotes: isPickup ? "" : itemsEditOrder.deliveryNotes || "",
         paymentMethod: itemsEditOrder.paymentMethod,
         paymentStatus: itemsEditOrder.paymentStatus,
         status: itemsEditOrder.status || itemsEditOrder.orderStatus,
@@ -340,7 +369,7 @@ export default function PendingOrdersPage() {
           </div>
 
           <div className="text-sm text-slate-500">
-            Total Pending Orders:{" "}
+            Total Cancelled Orders:{" "}
             <span className="font-semibold text-slate-700">
               {orders?.length || 0}
             </span>

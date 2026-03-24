@@ -4,7 +4,7 @@ import { getCustomerFromRequest } from "@/lib/customer-auth";
 
 export async function GET() {
   try {
-    const auth = await getCustomerAuth();
+    const auth = await getCustomerFromRequest();
 
     if (!auth) {
       return NextResponse.json(
@@ -20,6 +20,9 @@ export async function GET() {
         name: true,
         email: true,
         phone: true,
+        altPhone: true,
+        nearestLandmark: true,
+        deliveryAddress: true,
         isActive: true,
         createdAt: true,
       },

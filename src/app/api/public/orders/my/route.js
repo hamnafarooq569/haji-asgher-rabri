@@ -44,9 +44,17 @@ export async function GET() {
       orders: orders.map((order) => ({
         id: order.id,
         orderNumber: order.orderNumber,
+        fulfillmentType: order.fulfillmentType,
         status: order.status,
         paymentStatus: order.paymentStatus,
         paymentMethod: order.paymentMethod,
+        customerName: order.customerName,
+        mobile: order.mobile,
+        altMobile: order.altMobile,
+        email: order.email,
+        nearestLandmark: order.nearestLandmark,
+        deliveryAddress: order.deliveryAddress,
+        deliveryNotes: order.deliveryNotes,
         totalAmount: Number(order.totalAmount),
         createdAt: order.createdAt,
         items: order.items.map((item) => ({

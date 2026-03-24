@@ -45,6 +45,7 @@ export async function POST(req) {
       mobile,
       altMobile,
       email,
+      fulfillmentType,
       nearestLandmark,
       deliveryAddress,
       deliveryNotes,
@@ -52,9 +53,29 @@ export async function POST(req) {
       items,
     } = body;
 
-    if (!customerName || !mobile || !deliveryAddress) {
+    if (!customerName?.trim() || !mobile?.trim()) {
       return NextResponse.json(
-        { message: "customerName, mobile, deliveryAddress required" },
+        { message: "customerName and mobile are required" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !fulfillmentType ||
+      !["PICKUP", "DELIVERY"].includes(fulfillmentType)
+    ) {
+      return NextResponse.json(
+        { message: "fulfillmentType must be PICKUP or DELIVERY" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      fulfillmentType === "DELIVERY" &&
+      !deliveryAddress?.trim()
+    ) {
+      return NextResponse.json(
+        { message: "deliveryAddress is required for delivery orders" },
         { status: 400 }
       );
     }
@@ -83,13 +104,13 @@ export async function POST(req) {
 
       for (const item of items) {
         const productId = Number(item.productId);
-        const variantId = Number(item.variantId);
+        const variantId = item.variantId ? Number(item.variantId) : null;
         const quantity = Number(item.quantity);
         const addonIds = Array.isArray(item.addonIds)
           ? item.addonIds.map(Number)
           : [];
 
-        if (!productId || !variantId || quantity <= 0) {
+        if (!productId || quantity <= 0) {
           throw new Error("Invalid item data");
         }
 
@@ -111,26 +132,30 @@ export async function POST(req) {
           throw new Error("Product not found");
         }
 
-        const variant = await tx.productVariant.findFirst({
-          where: {
-            id: variantId,
-            productId,
-            isActive: true,
-          },
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            stock: true,
-          },
-        });
+        let variant = null;
 
-        if (!variant) {
-          throw new Error("Invalid variant");
-        }
+        if (variantId) {
+          variant = await tx.productVariant.findFirst({
+            where: {
+              id: variantId,
+              productId,
+              isActive: true,
+            },
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              stock: true,
+            },
+          });
 
-        if (variant.stock < quantity) {
-          throw new Error(`Insufficient stock for ${variant.name}`);
+          if (!variant) {
+            throw new Error("Invalid variant");
+          }
+
+          if (variant.stock < quantity) {
+            throw new Error(`Insufficient stock for ${variant.name}`);
+          }
         }
 
         let addons = [];
@@ -156,22 +181,24 @@ export async function POST(req) {
         }
 
         const productPrice = Number(product.basePrice || 0);
-        const variantPrice = Number(variant.price || 0);
+        const variantPrice = Number(variant?.price || 0);
         const unitPrice = productPrice + variantPrice + addonsTotal;
         const lineTotal = unitPrice * quantity;
 
         totalAmount += lineTotal;
 
-        await tx.productVariant.update({
-          where: { id: variant.id },
-          data: {
-            stock: { decrement: quantity },
-          },
-        });
+        if (variant?.id) {
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: {
+              stock: { decrement: quantity },
+            },
+          });
+        }
 
         preparedItems.push({
           productId,
-          variantId,
+          variantId: variant?.id || null,
           quantity,
           productPriceSnapshot: productPrice,
           variantPriceSnapshot: variantPrice,
@@ -186,13 +213,23 @@ export async function POST(req) {
         data: {
           orderNumber: generateOrderNumber(),
           customerId: customer?.id || null,
-          customerName,
-          mobile,
-          altMobile: altMobile || null,
-          email: email || null,
-          nearestLandmark: nearestLandmark || null,
-          deliveryAddress,
-          deliveryNotes: deliveryNotes || null,
+          customerName: customerName.trim(),
+          mobile: mobile.trim(),
+          altMobile: altMobile?.trim() || null,
+          email: email?.trim() || null,
+          fulfillmentType,
+          nearestLandmark:
+            fulfillmentType === "DELIVERY"
+              ? nearestLandmark?.trim() || null
+              : null,
+          deliveryAddress:
+            fulfillmentType === "DELIVERY"
+              ? deliveryAddress.trim()
+              : null,
+          deliveryNotes:
+            fulfillmentType === "DELIVERY"
+              ? deliveryNotes?.trim() || null
+              : null,
           paymentMethod: paymentMethod || "CASH",
           status: "RECEIVED",
           paymentStatus: "UNPAID",
@@ -244,11 +281,17 @@ export async function POST(req) {
         await tx.customer.update({
           where: { id: customer.id },
           data: {
-            name: customerName,
-            phone: mobile,
-            altPhone: altMobile || null,
-            nearestLandmark: nearestLandmark || null,
-            deliveryAddress: deliveryAddress || null,
+            name: customerName.trim(),
+            phone: mobile.trim(),
+            altPhone: altMobile?.trim() || null,
+            nearestLandmark:
+              fulfillmentType === "DELIVERY"
+                ? nearestLandmark?.trim() || null
+                : null,
+            deliveryAddress:
+              fulfillmentType === "DELIVERY"
+                ? deliveryAddress?.trim() || null
+                : null,
           },
         });
       }

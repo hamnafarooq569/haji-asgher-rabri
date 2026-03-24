@@ -6,19 +6,27 @@ export default function OrdersToolbar({
   onSearch,
   onStatusChange,
   onRefresh,
+  onFulfillmentChange,
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [fulfillmentType, setFulfillmentType] = useState("");
 
   const handleSearch = (e) => {
     e.preventDefault();
-    onSearch(search);
+    onSearch?.(search);
   };
 
   const handleStatusChange = (e) => {
     const value = e.target.value;
     setStatus(value);
-    onStatusChange(value);
+    onStatusChange?.(value);
+  };
+
+  const handleFulfillmentTypeChange = (e) => {
+    const value = e.target.value;
+    setFulfillmentType(value);
+    onFulfillmentChange?.(value);
   };
 
   return (
@@ -40,25 +48,38 @@ export default function OrdersToolbar({
         </button>
       </form>
 
-      <select
-        value={status}
-        onChange={handleStatusChange}
-        className="rounded-md border px-3 py-2 text-sm"
-      >
-        <option value="">All Status</option>
-        <option value="RECEIVED">Pending</option>
-        <option value="CONFIRMED">Confirmed</option>
-        <option value="COOKING">Cooking</option>
-        <option value="DELIVERED">Delivered</option>
-        <option value="CANCELLED">Cancelled</option>
-      </select>
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={status}
+          onChange={handleStatusChange}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="">All Status</option>
+          <option value="RECEIVED">Pending</option>
+          <option value="CONFIRMED">Confirmed</option>
+          <option value="COOKING">Cooking</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
 
-      <button
-        onClick={onRefresh}
-        className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100"
-      >
-        Refresh
-      </button>
+        <select
+          value={fulfillmentType}
+          onChange={handleFulfillmentTypeChange}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="">All Types</option>
+          <option value="DELIVERY">Delivery</option>
+          <option value="PICKUP">Pickup</option>
+        </select>
+
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="rounded-md border px-4 py-2 text-sm hover:bg-gray-100"
+        >
+          Refresh
+        </button>
+      </div>
     </div>
   );
 }

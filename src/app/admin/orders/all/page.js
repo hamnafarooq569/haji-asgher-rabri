@@ -30,7 +30,6 @@ export default function AllOrdersPage() {
   });
 
   const [publicProducts, setPublicProducts] = useState([]);
-
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const [isCustomerEditDrawerOpen, setIsCustomerEditDrawerOpen] =
@@ -60,8 +59,6 @@ export default function AllOrdersPage() {
           sort: "newest",
         })
       ).unwrap();
-
-      console.log("PUBLIC PRODUCTS RESPONSE:", result);
 
       const products = Array.isArray(result?.products)
         ? result.products
@@ -110,6 +107,127 @@ export default function AllOrdersPage() {
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
     dispatch(clearSelectedOrder());
+  };
+
+  const openOrderDocumentWindow = (payload, mode = "invoice") => {
+    const data = payload?.invoice || payload?.print || payload || {};
+    const customer = payload?.customer || data?.customer || {};
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+      : Array.isArray(data?.items)
+      ? data.items
+      : [];
+    const totals = payload?.totals || data?.totals || {};
+
+    const fulfillmentType = data?.fulfillmentType || "DELIVERY";
+    const isPickup = fulfillmentType === "PICKUP";
+
+    const rowsHtml = items
+      .map(
+        (item, index) => `
+          <tr>
+            <td style="padding:10px;border:1px solid #ddd;">${index + 1}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${item.productName || "-"}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${item.variantName || "-"}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${item.quantity || 0}</td>
+            <td style="padding:10px;border:1px solid #ddd;">PKR ${Number(item.unitPrice || 0).toLocaleString()}</td>
+            <td style="padding:10px;border:1px solid #ddd;">PKR ${Number(item.lineTotal || 0).toLocaleString()}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    const fulfillmentHtml = isPickup
+      ? `
+        <p><strong>Order Type:</strong> Pickup</p>
+        <p>Customer will collect the order from store.</p>
+      `
+      : `
+        <p><strong>Order Type:</strong> Delivery</p>
+        <p><strong>Address:</strong> ${customer.deliveryAddress || "-"}</p>
+        <p><strong>Landmark:</strong> ${customer.nearestLandmark || "-"}</p>
+        <p><strong>Notes:</strong> ${customer.deliveryNotes || "-"}</p>
+      `;
+
+    const html = `
+      <html>
+        <head>
+          <title>${mode === "print" ? "Order Print" : "Invoice"} - ${
+      data.orderNumber || ""
+    }</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+            h1,h2,h3,p { margin: 0 0 10px 0; }
+            .section { margin-bottom: 24px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .muted { color: #6b7280; }
+            .total-box { margin-top: 16px; text-align: right; font-size: 18px; font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          <div class="section">
+            <h1>${mode === "print" ? "Order Print" : "Invoice"}</h1>
+            <p class="muted">Order # ${data.orderNumber || "-"}</p>
+          </div>
+
+          <div class="section grid">
+            <div>
+              <h3>Customer</h3>
+              <p>${customer.customerName || "-"}</p>
+              <p>${customer.mobile || "-"}</p>
+              <p>${customer.email || "-"}</p>
+              ${fulfillmentHtml}
+            </div>
+
+            <div>
+              <h3>Order Info</h3>
+              <p>Status: ${data.status || "-"}</p>
+              <p>Payment Status: ${data.paymentStatus || "-"}</p>
+              <p>Payment Method: ${data.paymentMethod || "-"}</p>
+              <p>Created At: ${data.createdAt || "-"}</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Items</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th style="padding:10px;border:1px solid #ddd;">#</th>
+                  <th style="padding:10px;border:1px solid #ddd;">Product</th>
+                  <th style="padding:10px;border:1px solid #ddd;">Variant</th>
+                  <th style="padding:10px;border:1px solid #ddd;">Qty</th>
+                  <th style="padding:10px;border:1px solid #ddd;">Unit Price</th>
+                  <th style="padding:10px;border:1px solid #ddd;">Line Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+
+            <div class="total-box">
+              Total: PKR ${Number(totals.totalAmount || 0).toLocaleString()}
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const newWindow = window.open("", "_blank");
+    if (!newWindow) return;
+
+    newWindow.document.open();
+    newWindow.document.write(html);
+    newWindow.document.close();
+
+    if (mode === "print") {
+      newWindow.focus();
+      setTimeout(() => {
+        newWindow.print();
+      }, 500);
+    }
   };
 
   const handlePrintOrder = async (order) => {
@@ -206,106 +324,6 @@ export default function AllOrdersPage() {
     setCustomerEditOrder(null);
   };
 
-const openOrderDocumentWindow = (payload, mode = "invoice") => {
-  const data = payload?.invoice || payload?.print || payload || {};
-  const customer = data?.customer || {};
-  const items = Array.isArray(data?.items) ? data.items : [];
-  const totals = data?.totals || {};
-
-  const rowsHtml = items
-    .map(
-      (item, index) => `
-        <tr>
-          <td style="padding:10px;border:1px solid #ddd;">${index + 1}</td>
-          <td style="padding:10px;border:1px solid #ddd;">${item.productName || "-"}</td>
-          <td style="padding:10px;border:1px solid #ddd;">${item.variantName || "-"}</td>
-          <td style="padding:10px;border:1px solid #ddd;">${item.quantity || 0}</td>
-          <td style="padding:10px;border:1px solid #ddd;">PKR ${Number(item.unitPrice || 0).toLocaleString()}</td>
-          <td style="padding:10px;border:1px solid #ddd;">PKR ${Number(item.lineTotal || 0).toLocaleString()}</td>
-        </tr>
-      `
-    )
-    .join("");
-
-  const html = `
-    <html>
-      <head>
-        <title>${mode === "print" ? "Order Print" : "Invoice"} - ${data.orderNumber || ""}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-          h1,h2,h3,p { margin: 0 0 10px 0; }
-          .section { margin-bottom: 24px; }
-          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          .muted { color: #6b7280; }
-          .total-box { margin-top: 16px; text-align: right; font-size: 18px; font-weight: 700; }
-        </style>
-      </head>
-      <body>
-        <div class="section">
-          <h1>${mode === "print" ? "Order Print" : "Invoice"}</h1>
-          <p class="muted">Order # ${data.orderNumber || "-"}</p>
-        </div>
-
-        <div class="section grid">
-          <div>
-            <h3>Customer</h3>
-            <p>${customer.customerName || "-"}</p>
-            <p>${customer.mobile || "-"}</p>
-            <p>${customer.email || "-"}</p>
-            <p>${customer.deliveryAddress || "-"}</p>
-          </div>
-
-          <div>
-            <h3>Order Info</h3>
-            <p>Status: ${data.status || "-"}</p>
-            <p>Payment Status: ${data.paymentStatus || "-"}</p>
-            <p>Payment Method: ${data.paymentMethod || "-"}</p>
-            <p>Created At: ${data.createdAt || "-"}</p>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Items</h3>
-          <table>
-            <thead>
-              <tr>
-                <th style="padding:10px;border:1px solid #ddd;">#</th>
-                <th style="padding:10px;border:1px solid #ddd;">Product</th>
-                <th style="padding:10px;border:1px solid #ddd;">Variant</th>
-                <th style="padding:10px;border:1px solid #ddd;">Qty</th>
-                <th style="padding:10px;border:1px solid #ddd;">Unit Price</th>
-                <th style="padding:10px;border:1px solid #ddd;">Line Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-          </table>
-
-          <div class="total-box">
-            Total: PKR ${Number(totals.totalAmount || 0).toLocaleString()}
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
-
-  const newWindow = window.open("", "_blank");
-  if (!newWindow) return;
-
-  newWindow.document.open();
-  newWindow.document.write(html);
-  newWindow.document.close();
-
-  if (mode === "print") {
-    newWindow.focus();
-    setTimeout(() => {
-      newWindow.print();
-    }, 500);
-  }
-};
-
   const handleCustomerEditSubmit = async (formData) => {
     if (!customerEditOrder?.id) return;
 
@@ -315,7 +333,7 @@ const openOrderDocumentWindow = (payload, mode = "invoice") => {
       const existingItems =
         customerEditOrder?.items?.map((item) => ({
           productId: item?.productId || item?.product?.id,
-          variantId: item?.variantId || item?.variant?.id,
+          variantId: item?.variantId || item?.variant?.id || null,
           quantity: Number(item?.quantity || 1),
           addonIds: Array.isArray(item?.addons)
             ? item.addons
@@ -324,14 +342,18 @@ const openOrderDocumentWindow = (payload, mode = "invoice") => {
             : [],
         })) || [];
 
+      const fulfillmentType = formData.fulfillmentType || "DELIVERY";
+      const isPickup = fulfillmentType === "PICKUP";
+
       const payload = {
         customerName: formData.customerName,
         mobile: formData.mobile,
         altMobile: formData.altMobile || "",
         email: formData.email || "",
-        nearestLandmark: formData.nearestLandmark || "",
-        deliveryAddress: formData.deliveryAddress,
-        deliveryNotes: formData.deliveryNotes || "",
+        fulfillmentType,
+        nearestLandmark: isPickup ? "" : formData.nearestLandmark || "",
+        deliveryAddress: isPickup ? "" : formData.deliveryAddress || "",
+        deliveryNotes: isPickup ? "" : formData.deliveryNotes || "",
         paymentMethod: formData.paymentMethod,
         paymentStatus: formData.paymentStatus,
         status: formData.orderStatus,
@@ -377,14 +399,18 @@ const openOrderDocumentWindow = (payload, mode = "invoice") => {
     try {
       setItemsEditLoading(true);
 
+      const fulfillmentType = itemsEditOrder.fulfillmentType || "DELIVERY";
+      const isPickup = fulfillmentType === "PICKUP";
+
       const payload = {
         customerName: itemsEditOrder.customerName,
         mobile: itemsEditOrder.mobile,
         altMobile: itemsEditOrder.altMobile || "",
         email: itemsEditOrder.email || "",
-        nearestLandmark: itemsEditOrder.nearestLandmark || "",
-        deliveryAddress: itemsEditOrder.deliveryAddress,
-        deliveryNotes: itemsEditOrder.deliveryNotes || "",
+        fulfillmentType,
+        nearestLandmark: isPickup ? "" : itemsEditOrder.nearestLandmark || "",
+        deliveryAddress: isPickup ? "" : itemsEditOrder.deliveryAddress || "",
+        deliveryNotes: isPickup ? "" : itemsEditOrder.deliveryNotes || "",
         paymentMethod: itemsEditOrder.paymentMethod,
         paymentStatus: itemsEditOrder.paymentStatus,
         status: itemsEditOrder.status || itemsEditOrder.orderStatus,
@@ -408,8 +434,6 @@ const openOrderDocumentWindow = (payload, mode = "invoice") => {
       setItemsEditLoading(false);
     }
   };
-
-  
 
   return (
     <div className="space-y-6">

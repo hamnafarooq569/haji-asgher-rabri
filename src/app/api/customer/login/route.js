@@ -5,7 +5,9 @@ import { signCustomerToken } from "@/lib/customer-auth";
 
 export async function POST(req) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const email = body?.email?.trim().toLowerCase();
+    const password = body?.password;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -18,7 +20,7 @@ export async function POST(req) {
       where: { email },
     });
 
-    if (!customer) {
+    if (!customer || !customer.passwordHash) {
       return NextResponse.json(
         { success: false, message: "Invalid email or password." },
         { status: 401 }

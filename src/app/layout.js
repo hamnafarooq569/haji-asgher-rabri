@@ -2,6 +2,7 @@ import { Geist, Geist_Mono, Oswald } from "next/font/google";
 import "./globals.css";
 import StoreProvider from "@/store/provider";
 import AppBootstrap from "@/components/AppBootstrap";
+import ClientLayoutShell from "@/components/layout/ClientLayoutShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,9 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} ${oswald.variable}`}
       >
         <StoreProvider>
-          <AppBootstrap>{children}</AppBootstrap>
+          <AppBootstrap>
+            <ClientLayoutShell>{children}</ClientLayoutShell>
+          </AppBootstrap>
         </StoreProvider>
       </body>
     </html>

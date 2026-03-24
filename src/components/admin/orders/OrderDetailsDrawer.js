@@ -22,6 +22,8 @@ const labelMap = {
   CASH: "Cash",
   CARD: "Card",
   ONLINE: "Online",
+  PICKUP: "Pickup",
+  DELIVERY: "Delivery",
 };
 
 const formatLabel = (value) => labelMap[value] || value || "-";
@@ -74,6 +76,9 @@ export default function OrderDetailsDrawer({
 }) {
   if (!isOpen) return null;
 
+  const fulfillmentType = order?.fulfillmentType || "DELIVERY";
+  const isPickup = fulfillmentType === "PICKUP";
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
       <div className="h-full w-full max-w-2xl overflow-y-auto bg-white shadow-2xl">
@@ -122,6 +127,13 @@ export default function OrderDetailsDrawer({
                     <div className="flex justify-between gap-4">
                       <span className="text-slate-500">Order Status</span>
                       <span>{getStatusBadge(order?.status || order?.orderStatus)}</span>
+                    </div>
+
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-500">Fulfillment</span>
+                      <span className="font-medium text-slate-800">
+                        {formatLabel(fulfillmentType)}
+                      </span>
                     </div>
 
                     <div className="flex justify-between gap-4">
@@ -202,26 +214,41 @@ export default function OrderDetailsDrawer({
                     </p>
                   </div>
 
-                  <div className="md:col-span-2">
-                    <p className="text-slate-500">Address</p>
+                  <div>
+                    <p className="text-slate-500">Fulfillment Type</p>
                     <p className="font-medium text-slate-800">
-                      {order?.deliveryAddress || order?.customerAddress || "-"}
+                      {formatLabel(fulfillmentType)}
                     </p>
                   </div>
 
-                  <div>
-                    <p className="text-slate-500">Nearest Landmark</p>
-                    <p className="font-medium text-slate-800">
-                      {order?.nearestLandmark || "-"}
-                    </p>
-                  </div>
+                  {!isPickup ? (
+                    <>
+                      <div className="md:col-span-2">
+                        <p className="text-slate-500">Address</p>
+                        <p className="font-medium text-slate-800">
+                          {order?.deliveryAddress || order?.customerAddress || "-"}
+                        </p>
+                      </div>
 
-                  <div>
-                    <p className="text-slate-500">Delivery Notes</p>
-                    <p className="font-medium text-slate-800">
-                      {order?.deliveryNotes || "-"}
-                    </p>
-                  </div>
+                      <div>
+                        <p className="text-slate-500">Nearest Landmark</p>
+                        <p className="font-medium text-slate-800">
+                          {order?.nearestLandmark || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-slate-500">Delivery Notes</p>
+                        <p className="font-medium text-slate-800">
+                          {order?.deliveryNotes || "-"}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="md:col-span-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                      This is a pickup order. Customer will collect from store.
+                    </div>
+                  )}
                 </div>
               </div>
 

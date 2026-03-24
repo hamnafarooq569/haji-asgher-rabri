@@ -21,6 +21,7 @@ const customerProfileSlice = createSlice({
     clearCustomerProfileMessage: (state) => {
       state.successMessage = null;
     },
+    resetCustomerProfile: () => initialState,
   },
   extraReducers: (builder) => {
     builder
@@ -31,9 +32,11 @@ const customerProfileSlice = createSlice({
       .addCase(fetchCustomerProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.customer = action.payload?.customer || null;
+        state.error = null;
       })
       .addCase(fetchCustomerProfile.rejected, (state, action) => {
         state.loading = false;
+        state.customer = null;
         state.error = action.payload || "Failed to fetch profile";
       })
 
@@ -58,6 +61,7 @@ const customerProfileSlice = createSlice({
 export const {
   clearCustomerProfileError,
   clearCustomerProfileMessage,
+  resetCustomerProfile,
 } = customerProfileSlice.actions;
 
 export default customerProfileSlice.reducer;

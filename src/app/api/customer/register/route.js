@@ -5,7 +5,12 @@ import { signCustomerToken } from "@/lib/customer-auth";
 
 export async function POST(req) {
   try {
-    const { name, email, phone, password } = await req.json();
+    const body = await req.json();
+
+    const name = body?.name?.trim();
+    const email = body?.email?.trim().toLowerCase();
+    const phone = body?.phone?.trim();
+    const password = body?.password;
 
     if (!name || !email || !phone || !password) {
       return NextResponse.json(

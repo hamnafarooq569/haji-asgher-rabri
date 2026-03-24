@@ -27,6 +27,11 @@ enum PaymentMethod {
   ONLINE
 }
 
+enum FulfillmentType {
+  PICKUP
+  DELIVERY
+}
+
 model Role {
   id          Int      @id @default(autoincrement())
   name        String   @unique @db.VarChar(80)
@@ -168,33 +173,35 @@ model ProductVariant {
 }
 
 model Order {
-  id              Int           @id @default(autoincrement())
-  orderNumber     String        @unique
-  userId          Int?
-  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  customerId      Int?
-  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  totalAmount     Decimal       @db.Decimal(10, 2)
-  status          OrderStatus   @default(RECEIVED)
-  paymentStatus   PaymentStatus @default(UNPAID)
-  paymentMethod   PaymentMethod @default(CASH)
-  customerName    String        @db.VarChar(120)
-  mobile          String        @db.VarChar(30)
-  altMobile       String?       @db.VarChar(30)
-  email           String?       @db.VarChar(190)
-  nearestLandmark String?       @db.VarChar(190)
-  deliveryAddress String        @db.VarChar(500)
-  deliveryNotes   String?       @db.Text
-  deletedAt       DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                Int               @id @default(autoincrement())
+  orderNumber       String            @unique
+  userId            Int?
+  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerId        Int?
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  totalAmount       Decimal           @db.Decimal(10, 2)
+  fulfillmentType   FulfillmentType   @default(DELIVERY)
+  status            OrderStatus       @default(RECEIVED)
+  paymentStatus     PaymentStatus     @default(UNPAID)
+  paymentMethod     PaymentMethod     @default(CASH)
+  customerName      String            @db.VarChar(120)
+  mobile            String            @db.VarChar(30)
+  altMobile         String?           @db.VarChar(30)
+  email             String?           @db.VarChar(190)
+  nearestLandmark   String?           @db.VarChar(190)
+  deliveryAddress   String?           @db.VarChar(500)
+  deliveryNotes     String?           @db.Text
+  deletedAt         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  items OrderItem[]
+  items             OrderItem[]
 
   @@index([userId])
   @@index([customerId])
   @@index([status])
   @@index([paymentStatus])
+  @@index([fulfillmentType])
   @@index([createdAt])
   @@map("order")
 }

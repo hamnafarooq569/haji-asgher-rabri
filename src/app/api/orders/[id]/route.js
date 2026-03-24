@@ -37,8 +37,10 @@ async function getOrderById(req, ctx) {
 
     const itemsWithLineTotal = order.items.map((it) => ({
       ...it,
-      lineTotal:
-        Number(it.lineTotal ?? Number(it.priceAtPurchase || 0) * Number(it.quantity || 0)),
+      lineTotal: Number(
+        it.lineTotal ??
+          Number(it.priceAtPurchase || 0) * Number(it.quantity || 0)
+      ),
     }));
 
     return NextResponse.json({
@@ -74,6 +76,7 @@ async function updateOrder(req, ctx) {
     mobile,
     altMobile,
     email,
+    fulfillmentType,
     nearestLandmark,
     deliveryAddress,
     deliveryNotes,
@@ -83,9 +86,29 @@ async function updateOrder(req, ctx) {
     items,
   } = body;
 
-  if (!customerName || !mobile || !deliveryAddress) {
+  if (!customerName?.trim() || !mobile?.trim()) {
     return NextResponse.json(
-      { message: "customerName, mobile, deliveryAddress are required" },
+      { message: "customerName and mobile are required" },
+      { status: 400 }
+    );
+  }
+
+  if (
+    !fulfillmentType ||
+    !["PICKUP", "DELIVERY"].includes(fulfillmentType)
+  ) {
+    return NextResponse.json(
+      { message: "fulfillmentType must be PICKUP or DELIVERY" },
+      { status: 400 }
+    );
+  }
+
+  if (
+    fulfillmentType === "DELIVERY" &&
+    !deliveryAddress?.trim()
+  ) {
+    return NextResponse.json(
+      { message: "deliveryAddress is required for delivery orders" },
       { status: 400 }
     );
   }
@@ -118,17 +141,18 @@ async function updateOrder(req, ctx) {
         throw new Error("Delivered order cannot be edited");
       }
 
-      // old stock restore
       if (existing.status !== "CANCELLED") {
         for (const oldItem of existing.items) {
-          await tx.productVariant.update({
-            where: { id: oldItem.variantId },
-            data: {
-              stock: {
-                increment: oldItem.quantity,
+          if (oldItem.variantId) {
+            await tx.productVariant.update({
+              where: { id: oldItem.variantId },
+              data: {
+                stock: {
+                  increment: oldItem.quantity,
+                },
               },
-            },
-          });
+            });
+          }
         }
       }
 
@@ -137,15 +161,15 @@ async function updateOrder(req, ctx) {
 
       for (const item of items) {
         const productId = Number(item.productId);
-        const variantId = Number(item.variantId);
+        const variantId = item.variantId ? Number(item.variantId) : null;
         const quantity = Number(item.quantity);
         const addonIds = Array.isArray(item.addonIds)
           ? item.addonIds.map(Number)
           : [];
 
-        if (!productId || !variantId || !quantity || quantity <= 0) {
+        if (!productId || !quantity || quantity <= 0) {
           throw new Error(
-            "Each item must have valid productId, variantId and quantity"
+            "Each item must have valid productId and quantity"
           );
         }
 
@@ -166,28 +190,32 @@ async function updateOrder(req, ctx) {
           throw new Error("Product not found or inactive");
         }
 
-        const variant = await tx.productVariant.findFirst({
-          where: {
-            id: variantId,
-            productId,
-            isActive: true,
-          },
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            stock: true,
-          },
-        });
+        let variant = null;
 
-        if (!variant) {
-          throw new Error(
-            "Variant not found, inactive, or does not belong to product"
-          );
-        }
+        if (variantId) {
+          variant = await tx.productVariant.findFirst({
+            where: {
+              id: variantId,
+              productId,
+              isActive: true,
+            },
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              stock: true,
+            },
+          });
 
-        if (variant.stock < quantity) {
-          throw new Error(`Insufficient stock for variant ${variant.name}`);
+          if (!variant) {
+            throw new Error(
+              "Variant not found, inactive, or does not belong to product"
+            );
+          }
+
+          if (variant.stock < quantity) {
+            throw new Error(`Insufficient stock for variant ${variant.name}`);
+          }
         }
 
         let addons = [];
@@ -220,24 +248,26 @@ async function updateOrder(req, ctx) {
         }
 
         const productPrice = Number(product.basePrice || 0);
-        const variantPrice = Number(variant.price || 0);
+        const variantPrice = Number(variant?.price || 0);
         const unitPrice = productPrice + variantPrice + addonsTotal;
         const lineTotal = unitPrice * quantity;
 
         totalAmount += lineTotal;
 
-        await tx.productVariant.update({
-          where: { id: variant.id },
-          data: {
-            stock: {
-              decrement: quantity,
+        if (variant?.id) {
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: {
+              stock: {
+                decrement: quantity,
+              },
             },
-          },
-        });
+          });
+        }
 
         preparedItems.push({
           productId: product.id,
-          variantId: variant.id,
+          variantId: variant?.id || null,
           quantity,
           productPriceSnapshot: productPrice,
           variantPriceSnapshot: variantPrice,
@@ -255,13 +285,23 @@ async function updateOrder(req, ctx) {
       const updated = await tx.order.update({
         where: { id },
         data: {
-          customerName,
-          mobile,
-          altMobile: altMobile || null,
-          email: email || null,
-          nearestLandmark: nearestLandmark || null,
-          deliveryAddress,
-          deliveryNotes: deliveryNotes || null,
+          customerName: customerName.trim(),
+          mobile: mobile.trim(),
+          altMobile: altMobile?.trim() || null,
+          email: email?.trim() || null,
+          fulfillmentType,
+          nearestLandmark:
+            fulfillmentType === "DELIVERY"
+              ? nearestLandmark?.trim() || null
+              : null,
+          deliveryAddress:
+            fulfillmentType === "DELIVERY"
+              ? deliveryAddress.trim()
+              : null,
+          deliveryNotes:
+            fulfillmentType === "DELIVERY"
+              ? deliveryNotes?.trim() || null
+              : null,
           paymentMethod: paymentMethod || existing.paymentMethod,
           paymentStatus: paymentStatus || existing.paymentStatus,
           status: status || existing.status,
@@ -348,10 +388,12 @@ async function deleteOrder(req, ctx) {
   try {
     const updated = await prisma.$transaction(async (tx) => {
       for (const item of existing.items) {
-        await tx.productVariant.update({
-          where: { id: item.variantId },
-          data: { stock: { increment: item.quantity } },
-        });
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
       }
 
       return tx.order.update({

@@ -41,7 +41,10 @@ async function updatePaymentStatus(req, ctx) {
 
   return NextResponse.json({
     message: "Payment status updated",
-    order: updated,
+    order: {
+      ...updated,
+      totalAmount: Number(updated.totalAmount || 0),
+    },
   });
 }
 

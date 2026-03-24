@@ -12,10 +12,12 @@ async function getOrders(req) {
 
     const status = searchParams.get("status");
     const paymentStatus = searchParams.get("paymentStatus");
+    const fulfillmentType = searchParams.get("fulfillmentType");
 
     const where = {
       ...(status ? { status } : {}),
       ...(paymentStatus ? { paymentStatus } : {}),
+      ...(fulfillmentType ? { fulfillmentType } : {}),
     };
 
     const orders = await prisma.order.findMany({
@@ -29,6 +31,7 @@ async function getOrders(req) {
         customerName: true,
         mobile: true,
         email: true,
+        fulfillmentType: true,
         deliveryAddress: true,
         paymentMethod: true,
         paymentStatus: true,
@@ -45,6 +48,7 @@ async function getOrders(req) {
       customerName: order.customerName,
       customerPhone: order.mobile,
       customerEmail: order.email,
+      fulfillmentType: order.fulfillmentType,
       customerAddress: order.deliveryAddress,
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,

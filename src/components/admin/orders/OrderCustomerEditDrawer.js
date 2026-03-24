@@ -12,6 +12,7 @@ const ORDER_STATUS_OPTIONS = [
   "DELIVERED",
   "CANCELLED",
 ];
+const FULFILLMENT_TYPE_OPTIONS = ["DELIVERY", "PICKUP"];
 
 const labelMap = {
   CASH: "Cash",
@@ -25,6 +26,8 @@ const labelMap = {
   COOKING: "Cooking",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
+  DELIVERY: "Delivery",
+  PICKUP: "Pickup",
 };
 
 const formatLabel = (value) => labelMap[value] || value || "";
@@ -41,6 +44,7 @@ export default function OrderCustomerEditDrawer({
     paymentMethod: "CASH",
     paymentStatus: "UNPAID",
     orderStatus: "RECEIVED",
+    fulfillmentType: "DELIVERY",
     customerName: "",
     mobile: "",
     altMobile: "",
@@ -58,6 +62,7 @@ export default function OrderCustomerEditDrawer({
       paymentMethod: order?.paymentMethod || "CASH",
       paymentStatus: order?.paymentStatus || "UNPAID",
       orderStatus: order?.status || order?.orderStatus || "RECEIVED",
+      fulfillmentType: order?.fulfillmentType || "DELIVERY",
       customerName: order?.customerName || "",
       mobile: order?.mobile || order?.customerPhone || "",
       altMobile: order?.altMobile || "",
@@ -70,13 +75,26 @@ export default function OrderCustomerEditDrawer({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    setForm((prev) => {
+      const updated = {
+        ...prev,
+        [name]: value,
+      };
+
+      if (name === "fulfillmentType" && value === "PICKUP") {
+        updated.nearestLandmark = "";
+        updated.deliveryAddress = "";
+        updated.deliveryNotes = "";
+      }
+
+      return updated;
+    });
   };
 
   if (!isOpen) return null;
+
+  const isPickup = form.fulfillmentType === "PICKUP";
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end bg-black/40">
@@ -87,7 +105,7 @@ export default function OrderCustomerEditDrawer({
               Edit Customer / Payment
             </h2>
             <p className="text-sm text-slate-500">
-              Update customer, payment method, payment status and order status
+              Update customer, fulfillment, payment method, payment status and order status
             </p>
           </div>
 
@@ -114,7 +132,25 @@ export default function OrderCustomerEditDrawer({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Fulfillment Type
+              </label>
+              <select
+                name="fulfillmentType"
+                value={form.fulfillmentType}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+              >
+                {FULFILLMENT_TYPE_OPTIONS.map((item) => (
+                  <option key={item} value={item}>
+                    {formatLabel(item)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 Payment Method
@@ -223,44 +259,54 @@ export default function OrderCustomerEditDrawer({
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Nearest Landmark
-              </label>
-              <input
-                type="text"
-                name="nearestLandmark"
-                value={form.nearestLandmark}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
-              />
-            </div>
+            {!isPickup && (
+              <>
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Nearest Landmark
+                  </label>
+                  <input
+                    type="text"
+                    name="nearestLandmark"
+                    value={form.nearestLandmark}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                  />
+                </div>
 
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Delivery Address
-              </label>
-              <textarea
-                name="deliveryAddress"
-                value={form.deliveryAddress}
-                onChange={handleChange}
-                rows={3}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
-              />
-            </div>
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Delivery Address
+                  </label>
+                  <textarea
+                    name="deliveryAddress"
+                    value={form.deliveryAddress}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                  />
+                </div>
 
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Delivery Instructions
-              </label>
-              <textarea
-                name="deliveryNotes"
-                value={form.deliveryNotes}
-                onChange={handleChange}
-                rows={4}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
-              />
-            </div>
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Delivery Instructions
+                  </label>
+                  <textarea
+                    name="deliveryNotes"
+                    value={form.deliveryNotes}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                  />
+                </div>
+              </>
+            )}
+
+            {isPickup && (
+              <div className="md:col-span-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Pickup selected. Delivery address, landmark and instructions are not required.
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-200 pt-4">

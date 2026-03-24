@@ -2,12 +2,14 @@ import api from "@/lib/axios";
 
 const customerCheckoutService = {
   async validateOrder(data) {
-    const response = await api.post("/public/orders/validate", data);
-    return response.data;
+    return {
+      success: true,
+      ...data,
+    };
   },
 
   async placeOrder(data) {
-    const response = await api.post("/public/orders", data);
+    const response = await api.post("/customer/orders", data);
     return response.data;
   },
 };
