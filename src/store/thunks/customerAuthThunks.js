@@ -52,3 +52,29 @@ export const fetchCustomerMe = createAsyncThunk(
     }
   }
 );
+
+export const resendCustomerOtp = createAsyncThunk(
+  "customerAuth/resendCustomerOtp",
+  async (payload, thunkAPI) => {
+    try {
+      return await customerAuthService.resendOtp(payload);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Failed to resend OTP"
+      );
+    }
+  }
+);
+
+export const verifyCustomerOtp = createAsyncThunk(
+  "customerAuth/verifyCustomerOtp",
+  async (payload, thunkAPI) => {
+    try {
+      return await customerAuthService.verifyOtp(payload);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Failed to verify OTP"
+      );
+    }
+  }
+);
