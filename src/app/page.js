@@ -16,24 +16,7 @@ import {
   FaMapMarkerAlt,
 } from "react-icons/fa";
 
-const heroSlides = [
-  {
-    id: 1,
-    titleTop: "FEAST OF",
-    titleBottom: "FLAVOURS",
-    bg: "bg-[#e8dece]",
-    pattern: true,
-    imageLayout: "food",
-  },
-  {
-    id: 2,
-    titleTop: "HOT, FRESH",
-    titleBottom: "& IRRESISTIBLE",
-    bg: "bg-[linear-gradient(135deg,#7f0d1f_0%,#b30f2b_45%,#7a081b_100%)]",
-    pattern: false,
-    imageLayout: "red",
-  },
-];
+const heroImages = ["/banner1.png", "/banner2.png", "/banner3.png"];
 
 export default function HomePage() {
   const dispatch = useDispatch();
@@ -46,7 +29,6 @@ export default function HomePage() {
 
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoryFixed, setIsCategoryFixed] = useState(false);
 
@@ -57,6 +39,19 @@ export default function HomePage() {
   const CATEGORY_BAR_HEIGHT = 68;
   const STICKY_OFFSET = TOP_BAR_HEIGHT + CATEGORY_BAR_HEIGHT;
   const CONTENT_MAX_WIDTH = "max-w-[1400px]";
+
+  const sliderImages = [
+    heroImages[heroImages.length - 1],
+    ...heroImages,
+    heroImages[0],
+  ];
+
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchEndX, setTouchEndX] = useState(0);
+  const trackRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchAllProducts());
@@ -82,36 +77,14 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (isHovered) return;
+
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      setCurrentSlide((prev) => prev + 1);
     }, 3500);
 
     return () => clearInterval(interval);
-  }, []);
-
-  const groupedProducts = useMemo(() => {
-    const grouped = {};
-
-    for (const product of products) {
-      const categoryName = product?.category?.name || "Other";
-
-      if (!grouped[categoryName]) {
-        grouped[categoryName] = [];
-      }
-
-      grouped[categoryName].push(product);
-    }
-
-    return grouped;
-  }, [products]);
-
-  const categories = useMemo(() => Object.keys(groupedProducts), [groupedProducts]);
-
-  useEffect(() => {
-    if (!activeCategory && categories.length > 0) {
-      setActiveCategory(categories[0]);
-    }
-  }, [categories, activeCategory]);
+  }, [isHovered]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -137,7 +110,31 @@ export default function HomePage() {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [categories, activeCategory, STICKY_OFFSET]);
+  }, [activeCategory, STICKY_OFFSET]);
+
+  const groupedProducts = useMemo(() => {
+    const grouped = {};
+
+    for (const product of products) {
+      const categoryName = product?.category?.name || "Other";
+
+      if (!grouped[categoryName]) {
+        grouped[categoryName] = [];
+      }
+
+      grouped[categoryName].push(product);
+    }
+
+    return grouped;
+  }, [products]);
+
+  const categories = useMemo(() => Object.keys(groupedProducts), [groupedProducts]);
+
+  useEffect(() => {
+    if (!activeCategory && categories.length > 0) {
+      setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
 
   const handleScrollToCategory = (categoryName) => {
     setActiveCategory(categoryName);
@@ -170,13 +167,66 @@ export default function HomePage() {
     ).toFixed(2);
   };
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+  const goToPrevSlide = () => {
+    setCurrentSlide((prev) => prev - 1);
   };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  const goToNextSlide = () => {
+    setCurrentSlide((prev) => prev + 1);
   };
+
+  const goToRealSlide = (index) => {
+    setCurrentSlide(index + 1);
+  };
+
+  const handleTransitionEnd = () => {
+    if (currentSlide === 0) {
+      setIsAnimating(false);
+      setCurrentSlide(heroImages.length);
+    } else if (currentSlide === heroImages.length + 1) {
+      setIsAnimating(false);
+      setCurrentSlide(1);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAnimating) {
+      const id = requestAnimationFrame(() => {
+        const second = requestAnimationFrame(() => {
+          setIsAnimating(true);
+        });
+        return () => cancelAnimationFrame(second);
+      });
+      return () => cancelAnimationFrame(id);
+    }
+  }, [isAnimating]);
+
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchEndX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEndX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    const distance = touchStartX - touchEndX;
+    const minSwipeDistance = 50;
+
+    if (distance > minSwipeDistance) {
+      goToNextSlide();
+    } else if (distance < -minSwipeDistance) {
+      goToPrevSlide();
+    }
+  };
+
+  const activeDotIndex =
+    currentSlide === 0
+      ? heroImages.length - 1
+      : currentSlide === heroImages.length + 1
+      ? 0
+      : currentSlide - 1;
 
   if (!mounted) {
     return (
@@ -185,8 +235,6 @@ export default function HomePage() {
       </main>
     );
   }
-
-  const activeHero = heroSlides[currentSlide];
 
   return (
     <main className="min-h-screen bg-[#060606] text-white">
@@ -350,91 +398,66 @@ export default function HomePage() {
 
             <section className="px-4 pb-4 pt-4 md:px-6">
               <div className={`mx-auto w-full ${CONTENT_MAX_WIDTH}`}>
-                <div className="relative px-8 md:px-12">
+                <div
+                  className="relative overflow-hidden rounded-[28px] bg-[#121212]"
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <div
+                    ref={trackRef}
+                    onTransitionEnd={handleTransitionEnd}
+                    className={`flex ${
+                      isAnimating
+                        ? "transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                        : ""
+                    }`}
+                    style={{
+                      transform: `translateX(-${currentSlide * 100}%)`,
+                    }}
+                  >
+                    {sliderImages.map((img, index) => (
+                      <div
+                        key={`${img}-${index}`}
+                        className="relative w-full shrink-0 overflow-hidden"
+                      >
+                        <img
+                          src={img}
+                          alt={`Banner ${index + 1}`}
+                          className="h-[240px] w-full object-cover md:h-[420px]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
                   <button
-                    onClick={prevSlide}
-                    className="absolute left-[-28px] top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-[#d8102f] text-[28px] text-white shadow-lg transition hover:scale-105 md:h-16 md:w-16 md:text-[34px]"
+                    onClick={goToPrevSlide}
+                    className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#d8102f] text-[28px] text-white shadow-lg transition hover:scale-105 hover:bg-[#be0d29] md:h-14 md:w-14 md:text-[34px]"
                   >
                     ‹
                   </button>
 
                   <button
-                    onClick={nextSlide}
-                    className="absolute right-[-28px] top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-[#d8102f] text-[28px] text-white shadow-lg transition hover:scale-105 md:h-16 md:w-16 md:text-[34px]"
+                    onClick={goToNextSlide}
+                    className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#d8102f] text-[28px] text-white shadow-lg transition hover:scale-105 hover:bg-[#be0d29] md:h-14 md:w-14 md:text-[34px]"
                   >
                     ›
                   </button>
 
-                  <div className="overflow-hidden rounded-[28px] bg-[#121212]">
-                    <div
-                      className={`relative min-h-[240px] w-full overflow-hidden rounded-[28px] transition-all duration-500 ${activeHero.bg} md:min-h-[410px]`}
-                    >
-                      {activeHero.pattern && (
-                        <div
-                          className="absolute inset-0 opacity-40"
-                          style={{
-                            backgroundImage:
-                              "radial-gradient(circle at 20px 20px, rgba(120,94,59,0.13) 2px, transparent 2px)",
-                            backgroundSize: "80px 80px",
-                          }}
-                        />
-                      )}
-
-                      {activeHero.imageLayout === "food" ? (
-                        <>
-                          <div className="absolute left-[4%] top-[18%] z-10">
-                            <div className="h-[130px] w-[130px] rounded-full bg-[#d39135] shadow-[0_18px_30px_rgba(0,0,0,0.25)] md:h-[230px] md:w-[230px]" />
-                          </div>
-
-                          <div className="absolute right-[21%] top-[18%] z-20 hidden md:block">
-                            <div className="h-[150px] w-[150px] rounded-[26px] bg-[#8c4a20] shadow-[0_18px_30px_rgba(0,0,0,0.25)]" />
-                          </div>
-
-                          <div className="absolute right-[6%] top-[26%] z-20">
-                            <div className="h-[120px] w-[120px] rounded-full bg-[#8a451f] shadow-[0_18px_30px_rgba(0,0,0,0.25)] md:h-[210px] md:w-[210px]" />
-                          </div>
-
-                          <div className="absolute right-[28%] bottom-[16%] z-20 hidden md:block">
-                            <div className="h-[110px] w-[160px] rounded-[18px] bg-[#7d3418] shadow-[0_18px_30px_rgba(0,0,0,0.25)]" />
-                          </div>
-
-                          <div className="absolute inset-y-0 left-[7%] flex items-center">
-                            <div>
-                              <div className="heading-font text-[42px] font-black uppercase leading-none tracking-tight text-[#d6102d] [text-shadow:4px_4px_0_rgba(0,0,0,0.7)] md:text-[86px]">
-                                {activeHero.titleTop}
-                              </div>
-                              <div className="heading-font text-[56px] font-black uppercase leading-none tracking-tight text-[#d6102d] [text-shadow:4px_4px_0_rgba(0,0,0,0.7)] md:text-[120px]">
-                                {activeHero.titleBottom}
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div
-                            className="absolute inset-0 opacity-20"
-                            style={{
-                              backgroundImage:
-                                "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px)",
-                              backgroundSize: "80px 100%",
-                            }}
-                          />
-                          <div className="absolute left-[-70px] top-[-40px] h-[230px] w-[230px] rounded-full bg-[#e3a12b] blur-[2px] md:h-[360px] md:w-[360px]" />
-                          <div className="absolute right-[-60px] bottom-[-50px] h-[220px] w-[220px] rounded-full bg-[#8b2a18] md:h-[360px] md:w-[360px]" />
-
-                          <div className="relative z-10 flex min-h-[240px] items-center justify-center px-6 text-center md:min-h-[410px]">
-                            <div>
-                              <div className="heading-font text-[34px] font-black uppercase leading-none tracking-tight text-white/25 md:text-[86px]">
-                                {activeHero.titleTop}
-                              </div>
-                              <div className="heading-font mt-1 text-[42px] font-black uppercase leading-none tracking-tight text-white md:text-[98px]">
-                                {activeHero.titleBottom}
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                  <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+                    {heroImages.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => goToRealSlide(index)}
+                        className={`h-2.5 rounded-full transition-all duration-300 ${
+                          activeDotIndex === index
+                            ? "w-6 bg-[#d8102f]"
+                            : "w-2.5 bg-white/50 hover:bg-white/70"
+                        }`}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
