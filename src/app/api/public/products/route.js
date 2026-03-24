@@ -41,6 +41,10 @@ export async function GET(req) {
 
   const where = {
     deletedAt: null,
+    category: {
+      deletedAt: null,
+      isActive: true,
+    },
   };
 
   if (categorySlug) {
