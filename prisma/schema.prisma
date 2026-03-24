@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  RECEIVED
+  CONFIRMED
+  COOKING
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(80)
+  description String?  @db.VarChar(255)
+  isActive    Boolean  @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id        Int      @id @default(autoincrement())
+  module    String   @db.VarChar(60)
+  action    String   @db.VarChar(30)
+  key       String   @unique @db.VarChar(120)
+  createdAt DateTime @default(now())
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model User {
+  id           Int    @id @default(autoincrement())
+  name         String @db.VarChar(120)
+  email        String @unique @db.VarChar(190)
+  passwordHash String @db.VarChar(255)
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  isActive  Boolean  @default(true)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([roleId])
+}
+
+model Customer {
+  id            Int      @id @default(autoincrement())
+
+  name          String   @db.VarChar(120)
+  email         String   @unique @db.VarChar(190)
+  phone         String   @unique @db.VarChar(30)
+
+  passwordHash  String?  @db.VarChar(255)
+
+  isActive      Boolean  @default(true)
+  isVerified    Boolean  @default(false)
+
+  altPhone          String?
+  nearestLandmark   String?
+  deliveryAddress   String?
+  
+
+  otpCode       String?  @db.VarChar(10)
+  otpExpiresAt  DateTime?
+
+  deletedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders        Order[]
+}
+
+model Category {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique @db.VarChar(80)
+  slug     String  @unique @db.VarChar(100)
+  isActive Boolean @default(true)
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  name        String  @db.VarChar(140)
+  slug        String  @unique @db.VarChar(180)
+  description String? @db.Text
+  imageUrl    String? @db.VarChar(500)
+  imagePublicId String? @db.VarChar(255)
+
+  isSpecial Boolean @default(false)
+
+  basePrice Decimal? @db.Decimal(10, 2)
+  compareAt Decimal? @db.Decimal(10, 2)
+
+  isActive Boolean @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants ProductVariant[]
+  addons   ProductAddon[]
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+}
+
+model ProductVariant {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  name String @db.VarChar(60)
+
+  price     Decimal  @db.Decimal(10, 2)
+  compareAt Decimal? @db.Decimal(10, 2)
+  stock     Int      @default(0)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItems OrderItem[]
+
+  @@unique([productId, name])
+  @@index([productId])
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  orderNumber   String        @unique
+
+  // ADMIN USER (existing)
+  userId        Int?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // CUSTOMER (NEW)
+  customerId Int?
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  totalAmount   Decimal       @db.Decimal(10, 2)
+
+  status        OrderStatus   @default(RECEIVED)
+  paymentStatus PaymentStatus @default(UNPAID)
+  paymentMethod PaymentMethod @default(CASH)
+
+  // CUSTOMER DETAILS (snapshot)
+  customerName      String   @db.VarChar(120)
+  mobile            String   @db.VarChar(30)
+  altMobile         String?  @db.VarChar(30)
+  email             String?  @db.VarChar(190)
+  nearestLandmark   String?  @db.VarChar(190)
+  deliveryAddress   String   @db.VarChar(500)
+  deliveryNotes     String?  @db.Text
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([userId])
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id Int @id @default(autoincrement())
+
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  variantId Int
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+
+  quantity Int
+
+  productPriceSnapshot Decimal @default(0) @db.Decimal(10,2)
+  variantPriceSnapshot Decimal @default(0) @db.Decimal(10,2)
+  addonsTotalSnapshot  Decimal @default(0) @db.Decimal(10,2)
+
+  unitPrice Decimal @default(0) @db.Decimal(10,2)
+  lineTotal Decimal @default(0) @db.Decimal(10,2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addons OrderItemAddon[]
+
+  @@index([orderId])
+}
+
+model OrderItemAddon {
+  id Int @id @default(autoincrement())
+
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  addonId Int
+
+  addonNameSnapshot  String
+  addonPriceSnapshot Decimal @default(0) @db.Decimal(10,2)
+
+  createdAt DateTime @default(now())
+
+  @@index([orderItemId])
+}
+
+model SiteSetting {
+  id String @id @default("default")
+
+  storeName String?
+  phone String?
+  email String?
+  address String?
+
+  openingHours String?
+  deliveryInfo String?
+
+  facebook String?
+  instagram String?
+
+  isTemporarilyClosed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Addon {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  price     Decimal  @db.Decimal(10, 2)
+
+  imageUrl      String?  @db.VarChar(500)
+  imagePublicId String?  @db.VarChar(255)
+
+  isActive  Boolean  @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products ProductAddon[]
+}
+
+model ProductAddon {
+  productId Int
+  addonId   Int
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  addon   Addon   @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@id([productId, addonId])
+}

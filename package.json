@@ -1,0 +1,45 @@
+{
+  "name": "rabri",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "seed": "node prisma/seed.js",
+    "seed:catalog": "node prisma/seed-catalog.js",
+    "seed:perms": "node prisma/seed-permissions.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.2",
+    "@reduxjs/toolkit": "^2.11.2",
+    "@tanstack/match-sorter-utils": "^8.19.4",
+    "@tanstack/react-table": "^8.21.3",
+    "axios": "^1.13.6",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
+    "cookie": "^1.1.1",
+    "exceljs": "^4.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.577.0",
+    "next": "16.1.6",
+    "nodemailer": "^8.0.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-icons": "^5.6.0",
+    "react-redux": "^9.2.0",
+    "recharts": "^3.8.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.27",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "nodemon": "^3.1.14",
+    "postcss": "^8.5.8",
+    "prisma": "^6.19.2",
+    "tailwindcss": "^3.4.17"
+  }
+}
