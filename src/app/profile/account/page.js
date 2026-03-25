@@ -87,11 +87,11 @@ export default function ProfileAccountPage() {
   }, [hasCustomer]);
 
   return (
-    <section className="rounded-[30px] border border-white/10 bg-[#111] p-6 text-white shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:p-7">
-      <div className="mb-8">
+    <section className="rounded-[22px] border border-white/10 bg-[#111] p-4 text-white shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:rounded-[26px] sm:p-5 md:rounded-[30px] md:p-6 lg:p-7">
+      <div className="mb-7 sm:mb-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl">
+            <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl">
               My Account
             </h1>
             <p className="mt-2 text-sm leading-6 text-white/60 md:text-base">
@@ -121,7 +121,7 @@ export default function ProfileAccountPage() {
       </div>
 
       {!hasCustomer && (
-        <div className="mb-5 rounded-[22px] border border-yellow-500/20 bg-yellow-500/10 p-4">
+        <div className="mb-5 rounded-[20px] border border-yellow-500/20 bg-yellow-500/10 p-4 sm:rounded-[22px]">
           <p className="text-sm font-medium text-yellow-200">
             You are not logged in.
           </p>
@@ -133,28 +133,30 @@ export default function ProfileAccountPage() {
       )}
 
       {showTopError && (
-        <div className="mb-5 rounded-[22px] border border-red-500/20 bg-red-500/10 p-4">
+        <div className="mb-5 rounded-[20px] border border-red-500/20 bg-red-500/10 p-4 sm:rounded-[22px]">
           <p className="text-sm text-red-300">{error}</p>
         </div>
       )}
 
       {successMessage && (
-        <div className="mb-5 rounded-[22px] border border-green-500/20 bg-green-500/10 p-4">
+        <div className="mb-5 rounded-[20px] border border-green-500/20 bg-green-500/10 p-4 sm:rounded-[22px]">
           <p className="text-sm text-green-300">{successMessage}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="grid gap-6 md:max-w-3xl">
-        <div className="rounded-[24px] border border-white/10 bg-black p-5 shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
+      <form onSubmit={handleSubmit} className="grid gap-5 md:max-w-3xl md:gap-6">
+        <div className="rounded-[20px] border border-white/10 bg-black p-4 shadow-[0_12px_35px_rgba(0,0,0,0.25)] sm:rounded-[22px] sm:p-5 md:rounded-[24px]">
           <div>
-            <h2 className="text-2xl font-bold text-white">Profile Details</h2>
+            <h2 className="text-xl font-bold text-white sm:text-2xl">
+              Profile Details
+            </h2>
             <p className="mt-2 text-sm leading-6 text-white/60">
               Keep your basic details up to date for a smoother ordering
               experience.
             </p>
           </div>
 
-          <div className="mt-6 grid gap-4">
+          <div className="mt-5 grid gap-4 sm:mt-6">
             <div>
               <label className="mb-2 block text-sm font-medium text-white/85">
                 Name
@@ -165,7 +167,7 @@ export default function ProfileAccountPage() {
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Enter your name"
-                className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
+                className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-red-500 sm:text-base"
               />
             </div>
 
@@ -179,7 +181,7 @@ export default function ProfileAccountPage() {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="Enter your email"
-                className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
+                className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-red-500 sm:text-base"
               />
             </div>
 
@@ -193,7 +195,7 @@ export default function ProfileAccountPage() {
                 value={form.phone}
                 onChange={handleChange}
                 placeholder="Enter your phone number"
-                className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-red-500"
+                className="w-full rounded-2xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-red-500 sm:text-base"
               />
             </div>
           </div>
@@ -203,14 +205,14 @@ export default function ProfileAccountPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-2xl bg-red-600 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-2xl bg-red-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
           >
             {loading ? "Saving..." : "Save Changes"}
           </button>
 
           <Link
             href="/auth?redirect=/profile/account"
-            className="rounded-2xl border border-white/10 bg-black px-6 py-3.5 text-base font-semibold text-white transition hover:border-red-500 hover:text-red-400"
+            className="rounded-2xl border border-white/10 bg-black px-6 py-3.5 text-sm font-semibold text-white transition hover:border-red-500 hover:text-red-400 sm:text-base"
           >
             Sign Up / Login
           </Link>

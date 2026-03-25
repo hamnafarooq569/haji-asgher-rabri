@@ -48,6 +48,10 @@ export default function ProductDetailPage() {
       setSelectedVariantId(firstActiveVariant?.id || null);
       setSelectedAddonIds([]);
       setQuantity(1);
+    } else {
+      setSelectedVariantId(null);
+      setSelectedAddonIds([]);
+      setQuantity(1);
     }
   }, [currentProduct]);
 
@@ -163,9 +167,9 @@ export default function ProductDetailPage() {
 
   if (loading && !currentProduct) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-10 text-white">
+      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-5 md:px-6 md:py-10">
         <div className="mx-auto max-w-7xl">
-          <p>Loading product...</p>
+          <p className="text-sm text-white/70 sm:text-base">Loading product...</p>
         </div>
       </main>
     );
@@ -173,9 +177,9 @@ export default function ProductDetailPage() {
 
   if (error && !currentProduct) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-10 text-white">
+      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-5 md:px-6 md:py-10">
         <div className="mx-auto max-w-7xl">
-          <p className="text-red-400">{error}</p>
+          <p className="text-sm text-red-400 sm:text-base">{error}</p>
         </div>
       </main>
     );
@@ -183,30 +187,30 @@ export default function ProductDetailPage() {
 
   if (!currentProduct) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-10 text-white">
+      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-5 md:px-6 md:py-10">
         <div className="mx-auto max-w-7xl">
-          <p>Product not found.</p>
+          <p className="text-sm text-white/70 sm:text-base">Product not found.</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-8 text-white md:px-6 md:py-10">
+    <main className="min-h-screen bg-[#050505] px-3 py-6 text-white sm:px-4 sm:py-8 md:px-6 md:py-10">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
+        <div className="mb-5 sm:mb-6 md:mb-8">
           <Link
             href="/"
-            className="inline-flex items-center rounded-xl border border-white/10 bg-[#111] px-4 py-2.5 text-sm font-medium text-white transition hover:border-red-500 hover:text-red-400"
+            className="inline-flex items-center rounded-xl border border-white/10 bg-[#111] px-3.5 py-2 text-xs font-medium text-white transition hover:border-red-500 hover:text-red-400 sm:px-4 sm:py-2.5 sm:text-sm"
           >
             ← Back to Store
           </Link>
         </div>
 
-        <div className="mx-auto grid max-w-5xl items-stretch gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:min-h-[620px]">
-          <div className="h-full min-h-[620px] overflow-hidden rounded-[28px] border border-white/10 bg-[#111]">
+        <div className="mx-auto grid max-w-6xl items-start gap-4 sm:gap-5 lg:grid-cols-[1.08fr_0.92fr] lg:gap-6 xl:gap-8">
+          <div className="overflow-hidden rounded-[22px] border border-white/10 bg-[#111] sm:rounded-[24px] md:rounded-[28px]">
             {currentProduct.imageUrl ? (
-              <div className="h-full w-full">
+              <div className="aspect-[4/4] w-full sm:aspect-[5/4] md:aspect-[6/5] lg:aspect-auto lg:min-h-[620px]">
                 <img
                   src={currentProduct.imageUrl}
                   alt={currentProduct.name}
@@ -214,34 +218,34 @@ export default function ProductDetailPage() {
                 />
               </div>
             ) : (
-              <div className="flex h-full min-h-[620px] w-full items-center justify-center bg-[#cf0f2f] text-white/40">
+              <div className="flex aspect-[4/4] w-full items-center justify-center bg-[#cf0f2f] text-sm text-white/40 sm:aspect-[5/4] md:text-base lg:min-h-[620px]">
                 No Image
               </div>
             )}
           </div>
 
-          <div className="h-full min-h-[620px] w-full max-w-[420px] mx-auto rounded-[28px] border border-white/10 bg-[#111] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:p-8">
-            <div className="border-b border-white/10 pb-6">
-              <h1 className="text-4xl font-bold leading-tight md:text-5xl">
+          <div className="w-full rounded-[22px] border border-white/10 bg-[#111] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:rounded-[24px] sm:p-5 md:rounded-[28px] md:p-6 lg:min-h-[620px] lg:p-7 xl:p-8">
+            <div className="border-b border-white/10 pb-5 sm:pb-6">
+              <h1 className="text-[28px] font-bold leading-tight sm:text-[34px] md:text-[40px] lg:text-[46px]">
                 {currentProduct.name}
               </h1>
 
               {currentProduct.isSpecial && (
-                <span className="mt-4 inline-flex rounded-full bg-red-600 px-3 py-1 text-sm font-medium text-white">
+                <span className="mt-3 inline-flex rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white sm:mt-4 sm:text-sm">
                   Special
                 </span>
               )}
 
               {hasDescription && (
-                <p className="mt-4 text-[15px] leading-7 text-white/65">
+                <p className="mt-3 text-sm leading-6 text-white/65 sm:mt-4 sm:text-[15px] sm:leading-7">
                   {currentProduct.description}
                 </p>
               )}
             </div>
 
-            <div className="space-y-8 pt-7">
+            <div className="space-y-6 pt-5 sm:space-y-7 sm:pt-6 md:space-y-8 md:pt-7">
               <div>
-                <h2 className="mb-4 text-lg font-semibold text-white">
+                <h2 className="mb-3 text-base font-semibold text-white sm:mb-4 sm:text-lg">
                   Select Variant
                 </h2>
 
@@ -249,30 +253,34 @@ export default function ProductDetailPage() {
                   {currentProduct.variants?.map((variant) => (
                     <label
                       key={variant.id}
-                      className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-4 transition ${
+                      className={`flex cursor-pointer flex-col gap-3 rounded-2xl border px-4 py-3.5 transition sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-4 ${
                         selectedVariantId === variant.id
                           ? "border-red-500 bg-black shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
                           : "border-white/10 bg-black hover:border-white/20"
-                      }`}
+                      } ${!variant.isActive ? "opacity-60" : ""}`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3 sm:items-center">
                         <input
                           type="radio"
                           name="variant"
                           checked={selectedVariantId === variant.id}
                           onChange={() => setSelectedVariantId(variant.id)}
                           disabled={!variant.isActive}
+                          className="mt-1 sm:mt-0"
                         />
 
-                        <div>
-                          <p className="font-medium text-white">{variant.name}</p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-white sm:text-base">
+                            {variant.name}
+                          </p>
                           <p className="text-xs text-white/45">
                             Stock: {variant.stock}
+                            {!variant.isActive ? " • Unavailable" : ""}
                           </p>
                         </div>
                       </div>
 
-                      <p className="text-base font-semibold text-white">
+                      <p className="pl-6 text-sm font-semibold text-white sm:pl-0 sm:text-base">
                         Rs. {Number(variant.price || 0)}
                       </p>
                     </label>
@@ -282,7 +290,7 @@ export default function ProductDetailPage() {
 
               {hasAddons && (
                 <div>
-                  <h2 className="mb-4 text-lg font-semibold text-white">
+                  <h2 className="mb-3 text-base font-semibold text-white sm:mb-4 sm:text-lg">
                     Addons
                   </h2>
 
@@ -290,22 +298,25 @@ export default function ProductDetailPage() {
                     {normalizedAddons.map((addon) => (
                       <label
                         key={addon.id}
-                        className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-4 transition ${
+                        className={`flex cursor-pointer flex-col gap-3 rounded-2xl border px-4 py-3.5 transition sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-4 ${
                           selectedAddonIds.includes(addon.id)
                             ? "border-red-500 bg-black shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
                             : "border-white/10 bg-black hover:border-white/20"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-start gap-3 sm:items-center">
                           <input
                             type="checkbox"
                             checked={selectedAddonIds.includes(addon.id)}
                             onChange={() => handleToggleAddon(addon.id)}
+                            className="mt-1 sm:mt-0"
                           />
-                          <span className="text-white">{addon.name}</span>
+                          <span className="text-sm text-white sm:text-base">
+                            {addon.name}
+                          </span>
                         </div>
 
-                        <span className="font-medium text-white">
+                        <span className="pl-6 text-sm font-medium text-white sm:pl-0 sm:text-base">
                           Rs. {addon.price}
                         </span>
                       </label>
@@ -315,45 +326,45 @@ export default function ProductDetailPage() {
               )}
 
               <div>
-                <h2 className="mb-4 text-lg font-semibold text-white">
+                <h2 className="mb-3 text-base font-semibold text-white sm:mb-4 sm:text-lg">
                   Quantity
                 </h2>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   <button
                     type="button"
                     onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-black text-lg font-semibold transition hover:border-red-500"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-lg font-semibold transition hover:border-red-500 sm:h-12 sm:w-12"
                   >
                     -
                   </button>
 
-                  <div className="flex h-12 min-w-[56px] items-center justify-center rounded-xl border border-white/10 bg-black px-4 text-lg font-semibold text-white">
+                  <div className="flex h-11 min-w-[54px] items-center justify-center rounded-xl border border-white/10 bg-black px-4 text-base font-semibold text-white sm:h-12 sm:min-w-[58px] sm:text-lg">
                     {quantity}
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setQuantity((prev) => prev + 1)}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-black text-lg font-semibold transition hover:border-red-500"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-lg font-semibold transition hover:border-red-500 sm:h-12 sm:w-12"
                   >
                     +
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-black p-5">
-                <div className="flex items-center justify-between gap-4">
+              <div className="rounded-2xl border border-white/10 bg-black p-4 sm:p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <div>
-                    <p className="text-sm uppercase tracking-wide text-white/45">
+                    <p className="text-xs uppercase tracking-wide text-white/45 sm:text-sm">
                       Final Price
                     </p>
-                    <h2 className="mt-1 text-lg font-semibold text-white">
+                    <h2 className="mt-1 text-base font-semibold text-white sm:text-lg">
                       Total
                     </h2>
                   </div>
 
-                  <span className="text-3xl font-bold text-white">
+                  <span className="text-2xl font-bold text-white sm:text-3xl md:text-[32px]">
                     Rs. {lineTotal}
                   </span>
                 </div>
@@ -364,7 +375,7 @@ export default function ProductDetailPage() {
                 disabled={
                   currentProduct.availability !== "AVAILABLE" || !selectedVariant
                 }
-                className="w-full rounded-2xl bg-red-600 px-4 py-4 text-lg font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-2xl bg-red-600 px-4 py-3.5 text-base font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:py-4 sm:text-lg"
               >
                 Add to Cart
               </button>
@@ -373,11 +384,13 @@ export default function ProductDetailPage() {
         </div>
 
         {relatedProducts.length > 0 && (
-          <section className="mt-16 border-t border-white/10 pt-10">
-            <div className="mb-8 flex items-end justify-between gap-4">
+          <section className="mt-12 border-t border-white/10 pt-8 sm:mt-14 sm:pt-9 md:mt-16 md:pt-10">
+            <div className="mb-6 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between md:mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-white">More Products</h2>
-                <p className="mt-2 text-sm text-white/55">
+                <h2 className="text-2xl font-bold text-white sm:text-[28px] md:text-3xl">
+                  More Products
+                </h2>
+                <p className="mt-2 text-xs text-white/55 sm:text-sm">
                   Explore more items you may like.
                 </p>
               </div>
@@ -390,14 +403,14 @@ export default function ProductDetailPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-5 xl:grid-cols-4">
               {relatedProducts.map((product) => (
                 <article
                   key={product.id}
-                  className="group overflow-hidden rounded-[22px] border border-white/10 bg-[#111] p-3 shadow-[0_12px_35px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-red-500/40"
+                  className="group overflow-hidden rounded-[18px] border border-white/10 bg-[#111] p-2.5 shadow-[0_12px_35px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-red-500/40 sm:rounded-[20px] sm:p-3 md:rounded-[22px]"
                 >
                   <Link href={`/products/${product.slug}`}>
-                    <div className="overflow-hidden rounded-[16px] bg-[#0d0d0d]">
+                    <div className="overflow-hidden rounded-[14px] bg-[#0d0d0d] sm:rounded-[16px]">
                       {product.imageUrl ? (
                         <div className="aspect-square w-full">
                           <img
@@ -407,28 +420,28 @@ export default function ProductDetailPage() {
                           />
                         </div>
                       ) : (
-                        <div className="flex aspect-square w-full items-center justify-center text-white/40">
+                        <div className="flex aspect-square w-full items-center justify-center text-xs text-white/40 sm:text-sm">
                           No Image
                         </div>
                       )}
                     </div>
                   </Link>
 
-                  <div className="pt-4">
+                  <div className="pt-3 sm:pt-4">
                     <Link href={`/products/${product.slug}`}>
-                      <h3 className="min-h-[48px] text-sm font-semibold leading-6 text-white transition group-hover:text-red-400 md:text-base">
+                      <h3 className="min-h-[40px] text-xs font-semibold leading-5 text-white transition group-hover:text-red-400 sm:min-h-[46px] sm:text-sm sm:leading-6 md:min-h-[48px] md:text-base">
                         {product.name}
                       </h3>
                     </Link>
 
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="rounded-lg bg-black px-3 py-2 text-xs font-semibold text-white md:text-sm">
+                    <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                      <span className="inline-flex w-fit rounded-lg bg-black px-3 py-2 text-[11px] font-semibold text-white sm:text-xs md:text-sm">
                         Rs. {getCardPrice(product)}
                       </span>
 
                       <Link
                         href={`/products/${product.slug}`}
-                        className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-500 md:text-sm"
+                        className="inline-flex w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-[11px] font-semibold text-white transition hover:bg-red-500 sm:w-auto sm:text-xs md:text-sm"
                       >
                         View
                       </Link>

@@ -79,21 +79,28 @@ export default function VerifyInner() {
   };
 
   return (
-    <main className="min-h-screen bg-black px-4 py-10 text-white">
-      <div className="mx-auto max-w-xl rounded-2xl border border-white/10 bg-[#111] p-6 shadow-xl">
-        <h1 className="text-3xl font-bold">Verify Your Email</h1>
+    <main className="min-h-screen bg-black px-3 py-6 text-white sm:px-4 sm:py-8 md:px-6 md:py-10">
+      <div className="mx-auto max-w-xl rounded-[22px] border border-white/10 bg-[#111] p-4 shadow-xl sm:rounded-[24px] sm:p-5 md:rounded-[26px] md:p-6">
+        <h1 className="text-2xl font-bold sm:text-3xl">Verify Your Email</h1>
 
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm leading-6 text-white/60">
           We have sent a 6-digit code to {maskedEmail || "your email"}.
         </p>
 
-        {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-        {successMessage && (
-          <p className="mt-4 text-sm text-green-400">{successMessage}</p>
+        {error && (
+          <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-3">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
         )}
 
-        <form onSubmit={handleVerify} className="mt-8">
-          <div className="flex items-center justify-between gap-2 sm:gap-3">
+        {successMessage && (
+          <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/10 p-3">
+            <p className="text-sm text-green-400">{successMessage}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleVerify} className="mt-6 sm:mt-8">
+          <div className="grid grid-cols-6 gap-2 sm:gap-3">
             {otp.map((digit, index) => (
               <input
                 key={index}
@@ -104,7 +111,7 @@ export default function VerifyInner() {
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className="h-14 w-12 rounded-xl border border-white/10 bg-black text-center text-xl outline-none"
+                className="h-12 w-full rounded-xl border border-white/10 bg-black text-center text-lg text-white outline-none transition focus:border-red-500 sm:h-14 sm:text-xl"
               />
             ))}
           </div>
@@ -112,7 +119,7 @@ export default function VerifyInner() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-8 w-full rounded-xl bg-red-600 px-4 py-3"
+            className="mt-6 w-full rounded-2xl bg-red-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60 sm:mt-8 sm:text-base"
           >
             {loading ? "Verifying..." : "Verify OTP"}
           </button>
@@ -121,7 +128,7 @@ export default function VerifyInner() {
             type="button"
             onClick={handleResend}
             disabled={loading}
-            className="mt-3 w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+            className="mt-3 w-full rounded-2xl border border-white/10 bg-black px-4 py-3.5 text-sm font-semibold text-white transition hover:border-red-500 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
           >
             Resend OTP
           </button>
