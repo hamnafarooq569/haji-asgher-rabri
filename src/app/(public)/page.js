@@ -359,16 +359,23 @@ export default function HomePage() {
                   {groupedProducts[category]?.map((product) => (
                     <article
                       key={product.id}
-                      className="overflow-hidden rounded-[16px] bg-[#1d1d1f] p-2.5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] transition hover:scale-[1.02] sm:rounded-[18px] sm:p-3 md:p-3.5"
+                      className="group overflow-hidden rounded-[16px] bg-[#1d1d1f] p-2.5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(0,0,0,0.35)] sm:rounded-[18px] sm:p-3 md:p-3.5"
                     >
-                      <Link href={`/products/${product.slug}`}>
-                        <div className="flex aspect-square items-center justify-center overflow-hidden rounded-[12px] bg-[#cf0f2f] sm:rounded-[14px]">
+                      <Link
+                        href={`/products/${product.slug}`}
+                        prefetch={true}
+                        className="block active:scale-[0.99] transition-transform duration-150"
+                      >
+                        <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[12px] bg-[#cf0f2f] sm:rounded-[14px]">
                           {product.imageUrl ? (
-                            <img
-                              src={product.imageUrl}
-                              alt={product.name}
-                              className="h-full w-full object-cover transition duration-300 hover:scale-105"
-                            />
+                            <>
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                              />
+                              <div className="pointer-events-none absolute inset-0 bg-black/0 transition duration-300 group-hover:bg-black/10" />
+                            </>
                           ) : (
                             <div className="text-[10px] text-white/60 sm:text-xs">
                               No Image
@@ -378,8 +385,12 @@ export default function HomePage() {
                       </Link>
 
                       <div className="px-0.5 pb-0.5 pt-3 sm:px-1 sm:pt-3.5">
-                        <Link href={`/products/${product.slug}`}>
-                          <h3 className="min-h-[38px] text-center text-[12px] font-bold leading-snug text-white hover:text-[#ffccd5] sm:min-h-[42px] sm:text-[13px] md:min-h-[48px] md:text-[15px] lg:min-h-[52px] lg:text-[18px]">
+                        <Link
+                          href={`/products/${product.slug}`}
+                          prefetch={true}
+                          className="block active:scale-[0.99] transition-transform duration-150"
+                        >
+                          <h3 className="min-h-[38px] text-center text-[12px] font-bold leading-snug text-white transition-colors duration-300 hover:text-[#ffccd5] sm:min-h-[42px] sm:text-[13px] md:min-h-[48px] md:text-[15px] lg:min-h-[52px] lg:text-[18px]">
                             {product.name}
                           </h3>
                         </Link>
@@ -387,7 +398,8 @@ export default function HomePage() {
                         <div className="mt-4 flex items-center justify-between gap-2 sm:gap-3">
                           <Link
                             href={`/products/${product.slug}`}
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d8102f] text-[22px] font-semibold leading-none text-white transition hover:scale-105 sm:h-10 sm:w-10 sm:text-[24px] md:h-[42px] md:w-[42px] md:text-[25px] lg:h-[46px] lg:w-[46px] lg:text-[26px] ${
+                            prefetch={true}
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d8102f] text-[22px] font-semibold leading-none text-white transition-all duration-200 hover:scale-105 hover:bg-[#be0d29] active:scale-95 sm:h-10 sm:w-10 sm:text-[24px] md:h-[42px] md:w-[42px] md:text-[25px] lg:h-[46px] lg:w-[46px] lg:text-[26px] ${
                               product.availability !== "AVAILABLE"
                                 ? "pointer-events-none opacity-50"
                                 : ""
@@ -397,7 +409,7 @@ export default function HomePage() {
                           </Link>
 
                           <div className="min-w-0 flex-1">
-                            <div className="flex min-h-[36px] items-center justify-center whitespace-nowrap rounded-[10px] bg-white px-2.5 py-1.5 text-center text-[11px] font-extrabold text-[#1a1a1a] shadow sm:min-h-[38px] sm:px-3 sm:text-[12px] md:min-h-[40px] md:text-[13px] lg:min-h-[42px] lg:rounded-[12px] lg:px-3.5 lg:text-[15px]">
+                            <div className="flex min-h-[36px] items-center justify-center whitespace-nowrap rounded-[10px] bg-white px-2.5 py-1.5 text-center text-[11px] font-extrabold text-[#1a1a1a] shadow transition-transform duration-300 group-hover:scale-[1.02] sm:min-h-[38px] sm:px-3 sm:text-[12px] md:min-h-[40px] md:text-[13px] lg:min-h-[42px] lg:rounded-[12px] lg:px-3.5 lg:text-[15px]">
                               PKR{getDisplayPrice(product)}
                             </div>
                           </div>

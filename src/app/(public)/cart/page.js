@@ -92,7 +92,7 @@ export default function CartPage() {
                           </p>
 
                           <p className="mt-1 text-sm font-semibold text-white sm:text-base">
-                            Line Total: Rs. {item.lineTotal}
+                            Total: Rs. {item.lineTotal}
                           </p>
                         </div>
                       </div>
