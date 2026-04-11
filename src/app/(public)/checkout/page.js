@@ -10,6 +10,58 @@ import {
 } from "@/store/slices/customerCheckoutSlice";
 import { clearCart, hydrateCartFromStorage } from "@/store/slices/cartSlice";
 
+const OWNER_NUMBER = "923452459002";
+
+function createWhatsAppLink(order) {
+  let message = `🧾 *New Order Received*\n\n`;
+
+  message += `👤 *Customer Details*\n`;
+  message += `Name: ${order.customerName || "-"}\n`;
+  message += `Phone: ${order.mobile || "-"}\n`;
+
+  if (order.altMobile) message += `Alt Phone: ${order.altMobile}\n`;
+  if (order.email) message += `Email: ${order.email}\n`;
+
+  message += `Type: ${
+    order.fulfillmentType === "PICKUP" ? "PICKUP" : "DELIVERY"
+  }\n`;
+
+  if (order.nearestLandmark)
+    message += `Nearest Landmark: ${order.nearestLandmark}\n`;
+
+  if (order.deliveryAddress)
+    message += `Address: ${order.deliveryAddress}\n`;
+
+  if (order.deliveryNotes)
+    message += `Notes: ${order.deliveryNotes}\n`;
+
+  message += `Payment: ${order.paymentMethod}\n`;
+  message += `Order No: ${order.orderNumber}\n`;
+
+  message += `\n🛒 *Order Items*\n`;
+
+  (order.items || []).forEach((item, index) => {
+    const productName = item.product?.name || "Product";
+    const variantName = item.variant?.name || "";
+
+    const addonNames =
+      item.addons?.map((a) => a.addonNameSnapshot).filter(Boolean) || [];
+
+    message += `\n${index + 1}. ${productName}\n`;
+    message += `   Qty: ${item.quantity}\n`;
+
+    if (variantName) message += `   Variant: ${variantName}\n`;
+    if (addonNames.length)
+      message += `   Addons: ${addonNames.join(", ")}\n`;
+
+    message += `   Price: Rs ${item.lineTotal}\n`;
+  });
+
+  message += `\n💰 *Total: Rs ${order.totalAmount}*`;
+
+  return `https://wa.me/${OWNER_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
 export default function CheckoutPage() {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -229,7 +281,7 @@ export default function CheckoutPage() {
 
       setCustomerFormOpen(true);
       setActiveMode(null);
-    } catch (error) {
+    } catch {
       setAuthError("Failed to login.");
     } finally {
       setLoginLoading(false);
@@ -285,7 +337,7 @@ export default function CheckoutPage() {
 
       setCustomerFormOpen(true);
       setActiveMode(null);
-    } catch (error) {
+    } catch {
       setAuthError("Failed to sign up.");
     } finally {
       setSignupLoading(false);
@@ -312,21 +364,23 @@ export default function CheckoutPage() {
     }
 
     const payload = {
-      customerName: formData.customerName,
-      mobile: formData.mobile,
-      altMobile: formData.altMobile,
-      email: formData.email,
+      customerName: formData.customerName.trim(),
+      mobile: formData.mobile.trim(),
+      altMobile: formData.altMobile?.trim() || "",
+      email: formData.email?.trim() || "",
       fulfillmentType: formData.fulfillmentType,
       nearestLandmark:
         formData.fulfillmentType === "DELIVERY"
-          ? formData.nearestLandmark
+          ? formData.nearestLandmark?.trim() || ""
           : "",
       deliveryAddress:
         formData.fulfillmentType === "DELIVERY"
-          ? formData.deliveryAddress
+          ? formData.deliveryAddress?.trim() || ""
           : "",
       deliveryNotes:
-        formData.fulfillmentType === "DELIVERY" ? formData.deliveryNotes : "",
+        formData.fulfillmentType === "DELIVERY"
+          ? formData.deliveryNotes?.trim() || ""
+          : "",
       paymentMethod: formData.paymentMethod,
       items: items.map((item) => ({
         productId: item.productId,
@@ -340,14 +394,21 @@ export default function CheckoutPage() {
 
     if (placeCustomerOrder.fulfilled.match(resultAction)) {
       const order = resultAction.payload?.order;
-      const orderNumber = order?.orderNumber;
 
-      if (order) {
-        sessionStorage.setItem("lastPlacedOrder", JSON.stringify(order));
-      }
-
+    if (order) {
+      sessionStorage.setItem("lastPlacedOrder", JSON.stringify(order));
       dispatch(clearCart());
-      router.push(`/thank-you?orderNumber=${orderNumber}`);
+
+      const whatsappUrl = createWhatsAppLink(order);
+
+      // WhatsApp open karo
+      window.open(whatsappUrl, "_blank");
+
+      // optional: thank-you bhi dikhao
+      router.push("/thank-you");
+
+      return;
+    }
     }
   };
 
@@ -1066,7 +1127,7 @@ export default function CheckoutPage() {
 
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-semibold text-white sm:text-[15px]">
-                          Rs. {item.lineTotal}
+                          Rs. {item.lineTotal ?? 0}
                         </p>
                       </div>
                     </div>

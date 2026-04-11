@@ -2,13 +2,22 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCustomerFromRequest } from "@/lib/customer-auth";
 
-function toNum(value) {
-  const n = Number(value || 0);
-  return Number.isFinite(n) ? n : 0;
-}
-
 function normalizeFulfillmentType(value) {
   return value === "PICKUP" ? "PICKUP" : "DELIVERY";
+}
+
+function toNum(value) {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === "object" && typeof value.toString === "function") {
+    const n = Number(value.toString());
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
 }
 
 export async function GET() {
@@ -107,10 +116,7 @@ export async function POST(req) {
       );
     }
 
-    if (
-      fulfillmentType === "DELIVERY" &&
-      !deliveryAddress?.trim()
-    ) {
+    if (fulfillmentType === "DELIVERY" && !deliveryAddress?.trim()) {
       return NextResponse.json(
         {
           success: false,
@@ -121,38 +127,173 @@ export async function POST(req) {
     }
 
     let totalAmount = 0;
+    const preparedItems = [];
 
-    const normalizedItems = items.map((item) => {
-      const quantity = toNum(item.quantity || 1);
+    for (const rawItem of items) {
+      const productId = toNum(rawItem.productId);
+      const variantId = rawItem.variantId ? toNum(rawItem.variantId) : null;
+      const quantity = Math.max(1, toNum(rawItem.quantity || 1));
+      const addonIds = Array.isArray(rawItem.addonIds)
+        ? rawItem.addonIds.map((id) => toNum(id)).filter(Boolean)
+        : [];
 
-      const productPriceSnapshot = toNum(item.productPriceSnapshot);
-      const variantPriceSnapshot = toNum(item.variantPriceSnapshot);
-      const addonsTotalSnapshot = toNum(item.addonsTotalSnapshot);
+      if (!productId || quantity <= 0) {
+        return NextResponse.json(
+          { success: false, message: "Invalid item data." },
+          { status: 400 }
+        );
+      }
 
+      const product = await prisma.product.findFirst({
+        where: {
+          id: productId,
+          deletedAt: null,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          basePrice: true,
+        },
+      });
+
+      if (!product) {
+        return NextResponse.json(
+          { success: false, message: `Product ${productId} not found.` },
+          { status: 400 }
+        );
+      }
+
+      let variant = null;
+
+      if (variantId) {
+        variant = await prisma.productVariant.findFirst({
+          where: {
+            id: variantId,
+            productId,
+            isActive: true,
+          },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            stock: true,
+          },
+        });
+
+        if (!variant) {
+          return NextResponse.json(
+            { success: false, message: "Invalid variant selected." },
+            { status: 400 }
+          );
+        }
+
+        if (toNum(variant.stock) < quantity) {
+          return NextResponse.json(
+            {
+              success: false,
+              message: `Insufficient stock for ${variant.name}.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+
+      let addonSnapshots = [];
+      let addonsTotalSnapshot = 0;
+
+      if (addonIds.length > 0) {
+        const addons = await prisma.addon.findMany({
+          where: {
+            id: { in: addonIds },
+          },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            isActive: true,
+            deletedAt: true,
+          },
+        });
+
+        if (addons.length !== addonIds.length) {
+          return NextResponse.json(
+            { success: false, message: "Invalid addon selection." },
+            { status: 400 }
+          );
+        }
+
+        for (const addon of addons) {
+          if (!addon.isActive || addon.deletedAt) {
+            return NextResponse.json(
+              {
+                success: false,
+                message: `Addon ${addon.name} is not available.`,
+              },
+              { status: 400 }
+            );
+          }
+
+          const addonPriceSnapshot = toNum(addon.price);
+          addonsTotalSnapshot += addonPriceSnapshot;
+
+          addonSnapshots.push({
+            addonId: addon.id,
+            addonNameSnapshot: addon.name,
+            addonPriceSnapshot,
+          });
+        }
+      }
+
+      const productPriceSnapshot = toNum(product.basePrice);
+      const variantPriceSnapshot = toNum(variant?.price);
       const unitPrice =
-        toNum(item.unitPrice) ||
         productPriceSnapshot + variantPriceSnapshot + addonsTotalSnapshot;
+      const lineTotal = unitPrice * quantity;
 
-      const lineTotal = toNum(item.lineTotal) || unitPrice * quantity;
+      if (unitPrice <= 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Price resolved as 0 for product ${productId}.`,
+          },
+          { status: 400 }
+        );
+      }
 
       totalAmount += lineTotal;
 
-      return {
-        productId: item.productId,
-        variantId: item.variantId || null,
+      preparedItems.push({
+        productId,
+        variantId: variant?.id || null,
         quantity,
         productPriceSnapshot,
         variantPriceSnapshot,
         addonsTotalSnapshot,
         unitPrice,
         lineTotal,
-        addons: Array.isArray(item.addons) ? item.addons : [],
-      };
-    });
+        addons: addonSnapshots,
+      });
+    }
 
     const orderNumber = `ORD-${Date.now()}`;
 
-    const createdOrder = await prisma.order.create({
+    const transactionOperations = [];
+
+    for (const item of preparedItems) {
+      if (item.variantId) {
+        transactionOperations.push(
+          prisma.productVariant.update({
+            where: { id: item.variantId },
+            data: {
+              stock: { decrement: item.quantity },
+            },
+          })
+        );
+      }
+    }
+
+    const orderCreateOperation = prisma.order.create({
       data: {
         orderNumber,
         customerId: auth?.id || null,
@@ -178,7 +319,7 @@ export async function POST(req) {
         status: "RECEIVED",
         paymentStatus: "UNPAID",
         items: {
-          create: normalizedItems.map((item) => ({
+          create: preparedItems.map((item) => ({
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
@@ -208,24 +349,35 @@ export async function POST(req) {
       },
     });
 
+    transactionOperations.push(orderCreateOperation);
+
     if (auth?.id) {
-      await prisma.customer.update({
-        where: { id: auth.id },
-        data: {
-          name: customerName.trim(),
-          phone: mobile.trim(),
-          altPhone: altMobile?.trim() || null,
-          nearestLandmark:
-            fulfillmentType === "DELIVERY"
-              ? nearestLandmark?.trim() || null
-              : null,
-          deliveryAddress:
-            fulfillmentType === "DELIVERY"
-              ? deliveryAddress?.trim() || null
-              : null,
-        },
-      });
+      transactionOperations.push(
+        prisma.customer.update({
+          where: { id: auth.id },
+          data: {
+            name: customerName.trim(),
+            phone: mobile.trim(),
+            altPhone: altMobile?.trim() || null,
+            nearestLandmark:
+              fulfillmentType === "DELIVERY"
+                ? nearestLandmark?.trim() || null
+                : null,
+            deliveryAddress:
+              fulfillmentType === "DELIVERY"
+                ? deliveryAddress?.trim() || null
+                : null,
+            deliveryNotes:
+              fulfillmentType === "DELIVERY"
+                ? deliveryNotes?.trim() || null
+                : null,
+          },
+        })
+      );
     }
+
+    const txResults = await prisma.$transaction(transactionOperations);
+    const createdOrder = txResults[transactionOperations.length - (auth?.id ? 2 : 1)];
 
     return NextResponse.json({
       success: true,

@@ -35,19 +35,24 @@ async function getOrderById(req, ctx) {
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-    const itemsWithLineTotal = order.items.map((it) => ({
-      ...it,
-      lineTotal: Number(
-        it.lineTotal ??
-          Number(it.priceAtPurchase || 0) * Number(it.quantity || 0)
-      ),
-    }));
-
-    return NextResponse.json({
+    const normalizedOrder = {
       ...order,
-      totalAmount: Number(order.totalAmount),
-      items: itemsWithLineTotal,
-    });
+      totalAmount: Number(order.totalAmount || 0),
+      items: (order.items || []).map((it) => ({
+        ...it,
+        productPriceSnapshot: Number(it.productPriceSnapshot || 0),
+        variantPriceSnapshot: Number(it.variantPriceSnapshot || 0),
+        addonsTotalSnapshot: Number(it.addonsTotalSnapshot || 0),
+        unitPrice: Number(it.unitPrice || 0),
+        lineTotal: Number(it.lineTotal || 0),
+        addons: (it.addons || []).map((addon) => ({
+          ...addon,
+          addonPriceSnapshot: Number(addon.addonPriceSnapshot || 0),
+        })),
+      })),
+    };
+
+    return NextResponse.json(normalizedOrder);
   } catch (error) {
     console.error("GET /api/orders/[id] error:", error);
 
@@ -93,20 +98,14 @@ async function updateOrder(req, ctx) {
     );
   }
 
-  if (
-    !fulfillmentType ||
-    !["PICKUP", "DELIVERY"].includes(fulfillmentType)
-  ) {
+  if (!fulfillmentType || !["PICKUP", "DELIVERY"].includes(fulfillmentType)) {
     return NextResponse.json(
       { message: "fulfillmentType must be PICKUP or DELIVERY" },
       { status: 400 }
     );
   }
 
-  if (
-    fulfillmentType === "DELIVERY" &&
-    !deliveryAddress?.trim()
-  ) {
+  if (fulfillmentType === "DELIVERY" && !deliveryAddress?.trim()) {
     return NextResponse.json(
       { message: "deliveryAddress is required for delivery orders" },
       { status: 400 }
@@ -219,7 +218,7 @@ async function updateOrder(req, ctx) {
         }
 
         let addons = [];
-        let addonsTotal = 0;
+        let addonsTotalPerUnit = 0;
 
         if (addonIds.length > 0) {
           addons = await tx.addon.findMany({
@@ -243,14 +242,23 @@ async function updateOrder(req, ctx) {
             if (!addon.isActive || addon.deletedAt) {
               throw new Error(`Addon ${addon.name} is inactive or deleted`);
             }
-            addonsTotal += Number(addon.price);
+
+            addonsTotalPerUnit += Number(addon.price || 0);
           }
         }
 
         const productPrice = Number(product.basePrice || 0);
         const variantPrice = Number(variant?.price || 0);
-        const unitPrice = productPrice + variantPrice + addonsTotal;
+        const unitPrice = productPrice + variantPrice + addonsTotalPerUnit;
         const lineTotal = unitPrice * quantity;
+
+        if (productPrice <= 0 && variantPrice <= 0) {
+          throw new Error(
+            `Price resolved as 0 for productId ${productId}${
+              variantId ? ` and variantId ${variantId}` : ""
+            }`
+          );
+        }
 
         totalAmount += lineTotal;
 
@@ -271,7 +279,7 @@ async function updateOrder(req, ctx) {
           quantity,
           productPriceSnapshot: productPrice,
           variantPriceSnapshot: variantPrice,
-          addonsTotalSnapshot: addonsTotal,
+          addonsTotalSnapshot: addonsTotalPerUnit,
           unitPrice,
           lineTotal,
           addons,
@@ -341,7 +349,22 @@ async function updateOrder(req, ctx) {
         },
       });
 
-      return updated;
+      return {
+        ...updated,
+        totalAmount: Number(updated.totalAmount || 0),
+        items: (updated.items || []).map((it) => ({
+          ...it,
+          productPriceSnapshot: Number(it.productPriceSnapshot || 0),
+          variantPriceSnapshot: Number(it.variantPriceSnapshot || 0),
+          addonsTotalSnapshot: Number(it.addonsTotalSnapshot || 0),
+          unitPrice: Number(it.unitPrice || 0),
+          lineTotal: Number(it.lineTotal || 0),
+          addons: (it.addons || []).map((addon) => ({
+            ...addon,
+            addonPriceSnapshot: Number(addon.addonPriceSnapshot || 0),
+          })),
+        })),
+      };
     });
 
     return NextResponse.json({

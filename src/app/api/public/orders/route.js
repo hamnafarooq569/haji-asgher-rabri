@@ -36,8 +36,31 @@ function checkStoreOpen(openingHours) {
   return current >= startMin || current <= endMin;
 }
 
+function normalizeCreatedOrder(order) {
+  return {
+    ...order,
+    totalAmount: Number(order.totalAmount || 0),
+    items: (order.items || []).map((item) => ({
+      ...item,
+      productName: item.product?.name || null,
+      variantName: item.variant?.name || null,
+      productPriceSnapshot: Number(item.productPriceSnapshot || 0),
+      variantPriceSnapshot: Number(item.variantPriceSnapshot || 0),
+      addonsTotalSnapshot: Number(item.addonsTotalSnapshot || 0),
+      unitPrice: Number(item.unitPrice || 0),
+      lineTotal: Number(item.lineTotal || 0),
+      addons: (item.addons || []).map((addon) => ({
+        ...addon,
+        addonPriceSnapshot: Number(addon.addonPriceSnapshot || 0),
+      })),
+    })),
+  };
+}
+
 export async function POST(req) {
   try {
+    console.log("========== PUBLIC ORDER CREATE ROUTE HIT ==========");
+
     const body = await req.json();
 
     const {
@@ -53,6 +76,8 @@ export async function POST(req) {
       items,
     } = body;
 
+    console.log("Incoming order body:", JSON.stringify(body, null, 2));
+
     if (!customerName?.trim() || !mobile?.trim()) {
       return NextResponse.json(
         { message: "customerName and mobile are required" },
@@ -60,20 +85,14 @@ export async function POST(req) {
       );
     }
 
-    if (
-      !fulfillmentType ||
-      !["PICKUP", "DELIVERY"].includes(fulfillmentType)
-    ) {
+    if (!fulfillmentType || !["PICKUP", "DELIVERY"].includes(fulfillmentType)) {
       return NextResponse.json(
         { message: "fulfillmentType must be PICKUP or DELIVERY" },
         { status: 400 }
       );
     }
 
-    if (
-      fulfillmentType === "DELIVERY" &&
-      !deliveryAddress?.trim()
-    ) {
+    if (fulfillmentType === "DELIVERY" && !deliveryAddress?.trim()) {
       return NextResponse.json(
         { message: "deliveryAddress is required for delivery orders" },
         { status: 400 }
@@ -84,12 +103,15 @@ export async function POST(req) {
       return NextResponse.json({ message: "Cart is empty" }, { status: 400 });
     }
 
-    const customer = await getCustomerFromRequest();
+    const customer = await getCustomerFromRequest(req);
+    console.log("Resolved customer:", customer?.id || null);
 
     const settings = await prisma.siteSetting.findUnique({
       where: { id: "default" },
       select: { openingHours: true },
     });
+
+    console.log("Store opening hours:", settings?.openingHours || null);
 
     if (!checkStoreOpen(settings?.openingHours)) {
       return NextResponse.json(
@@ -102,15 +124,21 @@ export async function POST(req) {
       let totalAmount = 0;
       const preparedItems = [];
 
-      for (const item of items) {
-        const productId = Number(item.productId);
-        const variantId = item.variantId ? Number(item.variantId) : null;
-        const quantity = Number(item.quantity);
-        const addonIds = Array.isArray(item.addonIds)
-          ? item.addonIds.map(Number)
+      for (const rawItem of items) {
+        const productId = Number(rawItem.productId);
+        const variantId = rawItem.variantId ? Number(rawItem.variantId) : null;
+        const quantity = Number(rawItem.quantity);
+        const addonIds = Array.isArray(rawItem.addonIds)
+          ? rawItem.addonIds.map(Number)
           : [];
 
-        if (!productId || quantity <= 0) {
+        console.log("------------ ITEM START ------------");
+        console.log("productId:", productId);
+        console.log("variantId:", variantId);
+        console.log("quantity:", quantity);
+        console.log("addonIds:", addonIds);
+
+        if (!productId || !quantity || quantity <= 0) {
           throw new Error("Invalid item data");
         }
 
@@ -127,6 +155,8 @@ export async function POST(req) {
             basePrice: true,
           },
         });
+
+        console.log("Fetched product:", product);
 
         if (!product) {
           throw new Error("Product not found");
@@ -149,6 +179,8 @@ export async function POST(req) {
             },
           });
 
+          console.log("Fetched variant:", variant);
+
           if (!variant) {
             throw new Error("Invalid variant");
           }
@@ -159,14 +191,23 @@ export async function POST(req) {
         }
 
         let addons = [];
-        let addonsTotal = 0;
+        let addonsTotalPerUnit = 0;
 
         if (addonIds.length > 0) {
           addons = await tx.addon.findMany({
             where: {
               id: { in: addonIds },
             },
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              isActive: true,
+              deletedAt: true,
+            },
           });
+
+          console.log("Fetched addons:", addons);
 
           if (addons.length !== addonIds.length) {
             throw new Error("Invalid addon selection");
@@ -176,16 +217,34 @@ export async function POST(req) {
             if (!addon.isActive || addon.deletedAt) {
               throw new Error(`Addon ${addon.name} is not available`);
             }
-            addonsTotal += Number(addon.price);
+
+            addonsTotalPerUnit += Number(addon.price || 0);
           }
         }
 
         const productPrice = Number(product.basePrice || 0);
         const variantPrice = Number(variant?.price || 0);
-        const unitPrice = productPrice + variantPrice + addonsTotal;
+
+        const unitPrice = productPrice + variantPrice + addonsTotalPerUnit;
         const lineTotal = unitPrice * quantity;
 
+        console.log("productPrice =", productPrice);
+        console.log("variantPrice =", variantPrice);
+        console.log("addonsTotalPerUnit =", addonsTotalPerUnit);
+        console.log("unitPrice =", unitPrice);
+        console.log("lineTotal =", lineTotal);
+
+        if (unitPrice <= 0) {
+          throw new Error(
+            `Price resolved as 0 for productId ${productId}${
+              variantId ? ` and variantId ${variantId}` : ""
+            }`
+          );
+        }
+
         totalAmount += lineTotal;
+
+        console.log("running totalAmount =", totalAmount);
 
         if (variant?.id) {
           await tx.productVariant.update({
@@ -202,12 +261,20 @@ export async function POST(req) {
           quantity,
           productPriceSnapshot: productPrice,
           variantPriceSnapshot: variantPrice,
-          addonsTotalSnapshot: addonsTotal,
+          addonsTotalSnapshot: addonsTotalPerUnit,
           unitPrice,
           lineTotal,
           addons,
         });
+
+        console.log(
+          "prepared item snapshot:",
+          preparedItems[preparedItems.length - 1]
+        );
+        console.log("------------ ITEM END ------------");
       }
+
+      console.log("FINAL totalAmount before create =", totalAmount);
 
       const order = await tx.order.create({
         data: {
@@ -223,9 +290,7 @@ export async function POST(req) {
               ? nearestLandmark?.trim() || null
               : null,
           deliveryAddress:
-            fulfillmentType === "DELIVERY"
-              ? deliveryAddress.trim()
-              : null,
+            fulfillmentType === "DELIVERY" ? deliveryAddress.trim() : null,
           deliveryNotes:
             fulfillmentType === "DELIVERY"
               ? deliveryNotes?.trim() || null
@@ -248,7 +313,7 @@ export async function POST(req) {
                 create: item.addons.map((addon) => ({
                   addonId: addon.id,
                   addonNameSnapshot: addon.name,
-                  addonPriceSnapshot: addon.price,
+                  addonPriceSnapshot: Number(addon.price || 0),
                 })),
               },
             })),
@@ -277,6 +342,8 @@ export async function POST(req) {
         },
       });
 
+      console.log("CREATED ORDER RAW:", JSON.stringify(order, null, 2));
+
       if (customer?.id) {
         await tx.customer.update({
           where: { id: customer.id },
@@ -292,12 +359,19 @@ export async function POST(req) {
               fulfillmentType === "DELIVERY"
                 ? deliveryAddress?.trim() || null
                 : null,
+            deliveryNotes:
+              fulfillmentType === "DELIVERY"
+                ? deliveryNotes?.trim() || null
+                : null,
           },
         });
       }
 
-      return order;
+      return normalizeCreatedOrder(order);
     });
+
+    console.log("NORMALIZED ORDER RESPONSE:", JSON.stringify(result, null, 2));
+    console.log("========== ORDER CREATE SUCCESS ==========");
 
     return NextResponse.json(
       {
@@ -307,7 +381,8 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("ORDER ERROR:", error);
+    console.error("========== ORDER CREATE ERROR ==========");
+    console.error(error);
 
     return NextResponse.json(
       {

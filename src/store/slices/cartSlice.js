@@ -1,30 +1,35 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+const getEmptyCart = () => ({
+  items: [],
+  subtotal: 0,
+  totalQuantity: 0,
+});
+
+const toNumber = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const getInitialCart = () => {
   if (typeof window === "undefined") {
-    return {
-      items: [],
-      subtotal: 0,
-      totalQuantity: 0,
-    };
+    return getEmptyCart();
   }
 
   try {
     const saved = localStorage.getItem("customer_cart");
     if (!saved) {
-      return {
-        items: [],
-        subtotal: 0,
-        totalQuantity: 0,
-      };
+      return getEmptyCart();
     }
-    return JSON.parse(saved);
-  } catch {
+
+    const parsed = JSON.parse(saved);
     return {
-      items: [],
-      subtotal: 0,
-      totalQuantity: 0,
+      items: Array.isArray(parsed?.items) ? parsed.items : [],
+      subtotal: toNumber(parsed?.subtotal),
+      totalQuantity: toNumber(parsed?.totalQuantity),
     };
+  } catch {
+    return getEmptyCart();
   }
 };
 
@@ -32,11 +37,11 @@ const calculateCart = (items) => {
   let subtotal = 0;
   let totalQuantity = 0;
 
-  for (const item of items) {
-    const productPrice = Number(item.productPrice || 0);
-    const variantPrice = Number(item.variantPrice || 0);
-    const addonsTotal = Number(item.addonsTotal || 0);
-    const quantity = Number(item.quantity || 0);
+  const normalizedItems = items.map((item) => {
+    const productPrice = toNumber(item.productPrice);
+    const variantPrice = toNumber(item.variantPrice);
+    const addonsTotal = toNumber(item.addonsTotal);
+    const quantity = Math.max(1, toNumber(item.quantity));
 
     const unitPrice = productPrice + variantPrice + addonsTotal;
     const lineTotal = unitPrice * quantity;
@@ -44,12 +49,19 @@ const calculateCart = (items) => {
     subtotal += lineTotal;
     totalQuantity += quantity;
 
-    item.unitPrice = unitPrice;
-    item.lineTotal = lineTotal;
-  }
+    return {
+      ...item,
+      productPrice,
+      variantPrice,
+      addonsTotal,
+      quantity,
+      unitPrice,
+      lineTotal,
+    };
+  });
 
   return {
-    items,
+    items: normalizedItems,
     subtotal,
     totalQuantity,
   };
@@ -68,7 +80,13 @@ const persistCart = (state) => {
   }
 };
 
-const initialState = getInitialCart();
+const initialHydrated = calculateCart(getInitialCart().items);
+
+const initialState = {
+  items: initialHydrated.items,
+  subtotal: initialHydrated.subtotal,
+  totalQuantity: initialHydrated.totalQuantity,
+};
 
 const cartSlice = createSlice({
   name: "cart",
@@ -77,10 +95,12 @@ const cartSlice = createSlice({
     addToCart: (state, action) => {
       const payload = action.payload;
 
+      const sortedAddonIds = [...(payload.addonIds || [])].sort((a, b) => a - b);
+
       const cartKey = [
         payload.productId,
-        payload.variantId,
-        ...(payload.addonIds || []),
+        payload.variantId ?? "no-variant",
+        ...sortedAddonIds,
       ].join("-");
 
       const existingIndex = state.items.findIndex(
@@ -88,7 +108,7 @@ const cartSlice = createSlice({
       );
 
       if (existingIndex > -1) {
-        state.items[existingIndex].quantity += payload.quantity || 1;
+        state.items[existingIndex].quantity += toNumber(payload.quantity || 1);
       } else {
         state.items.push({
           cartKey,
@@ -96,24 +116,24 @@ const cartSlice = createSlice({
           productName: payload.productName,
           productSlug: payload.productSlug || "",
           productImage: payload.productImage || "",
-          productPrice: Number(payload.productPrice || 0),
+          productPrice: toNumber(payload.productPrice),
 
-          variantId: payload.variantId,
+          variantId: payload.variantId ?? null,
           variantName: payload.variantName || "",
-          variantPrice: Number(payload.variantPrice || 0),
+          variantPrice: toNumber(payload.variantPrice),
 
-          addonIds: payload.addonIds || [],
+          addonIds: sortedAddonIds,
           addons: payload.addons || [],
-          addonsTotal: Number(payload.addonsTotal || 0),
+          addonsTotal: toNumber(payload.addonsTotal),
 
-          quantity: Number(payload.quantity || 1),
+          quantity: Math.max(1, toNumber(payload.quantity || 1)),
           unitPrice: 0,
           lineTotal: 0,
         });
       }
 
       const calculated = calculateCart(state.items);
-      state.items = [...calculated.items];
+      state.items = calculated.items;
       state.subtotal = calculated.subtotal;
       state.totalQuantity = calculated.totalQuantity;
 
@@ -126,7 +146,7 @@ const cartSlice = createSlice({
       );
 
       const calculated = calculateCart(state.items);
-      state.items = [...calculated.items];
+      state.items = calculated.items;
       state.subtotal = calculated.subtotal;
       state.totalQuantity = calculated.totalQuantity;
 
@@ -140,7 +160,7 @@ const cartSlice = createSlice({
       }
 
       const calculated = calculateCart(state.items);
-      state.items = [...calculated.items];
+      state.items = calculated.items;
       state.subtotal = calculated.subtotal;
       state.totalQuantity = calculated.totalQuantity;
 
@@ -154,7 +174,7 @@ const cartSlice = createSlice({
       }
 
       const calculated = calculateCart(state.items);
-      state.items = [...calculated.items];
+      state.items = calculated.items;
       state.subtotal = calculated.subtotal;
       state.totalQuantity = calculated.totalQuantity;
 
@@ -170,9 +190,10 @@ const cartSlice = createSlice({
 
     hydrateCartFromStorage: (state) => {
       const hydrated = getInitialCart();
-      state.items = hydrated.items || [];
-      state.subtotal = hydrated.subtotal || 0;
-      state.totalQuantity = hydrated.totalQuantity || 0;
+      const calculated = calculateCart(hydrated.items || []);
+      state.items = calculated.items;
+      state.subtotal = calculated.subtotal;
+      state.totalQuantity = calculated.totalQuantity;
     },
   },
 });

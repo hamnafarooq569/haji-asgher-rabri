@@ -58,8 +58,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (currentProduct?.variants?.length > 0) {
       const firstActiveVariant =
-        currentProduct.variants.find((v) => v.isActive) ||
-        currentProduct.variants[0];
+        currentProduct.variants.find((v) => v.isActive) || null;
 
       setSelectedVariantId(firstActiveVariant?.id || null);
       setSelectedAddonIds([]);
@@ -72,8 +71,12 @@ export default function ProductDetailPage() {
   }, [currentProduct]);
 
   const selectedVariant = useMemo(() => {
+    if (!currentProduct?.variants?.length) return null;
+
     return (
-      currentProduct?.variants?.find((v) => v.id === selectedVariantId) || null
+      currentProduct.variants.find(
+        (v) => v.id === selectedVariantId && v.isActive
+      ) || null
     );
   }, [currentProduct, selectedVariantId]);
 
@@ -131,6 +134,7 @@ export default function ProductDetailPage() {
 
   const hasDescription = Boolean(currentProduct?.description?.trim());
   const hasAddons = normalizedAddons.length > 0;
+  const hasVariants = (currentProduct?.variants?.length || 0) > 0;
 
   const handleToggleAddon = (addonId) => {
     setSelectedAddonIds((prev) =>
@@ -141,7 +145,11 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    if (!currentProduct || !selectedVariant) return;
+    if (!currentProduct) return;
+
+    if (hasVariants && !selectedVariant) {
+      return;
+    }
 
     dispatch(
       addToCart({
@@ -150,8 +158,8 @@ export default function ProductDetailPage() {
         productSlug: currentProduct.slug,
         productImage: currentProduct.imageUrl || "",
         productPrice,
-        variantId: selectedVariant.id,
-        variantName: selectedVariant.name,
+        variantId: selectedVariant?.id || null,
+        variantName: selectedVariant?.name || "",
         variantPrice,
         addonIds: selectedAddons.map((addon) => addon.id),
         addons: selectedAddons.map((addon) => ({
@@ -169,9 +177,7 @@ export default function ProductDetailPage() {
 
   const getCardPrice = (product) => {
     const firstActiveVariant =
-      product?.variants?.find((variant) => variant.isActive) ||
-      product?.variants?.[0] ||
-      null;
+      product?.variants?.find((variant) => variant.isActive) || null;
 
     return (
       Number(product?.basePrice || 0) + Number(firstActiveVariant?.price || 0)
@@ -180,56 +186,58 @@ export default function ProductDetailPage() {
 
   function OrderCard() {
     return (
-      <div className="w-full self-start rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#111] p-3 sm:p-4 md:p-5 xl:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition-all duration-500">
+      <div className="w-full self-start rounded-[20px] border border-white/10 bg-[#111] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition-all duration-500 sm:rounded-[24px] sm:p-4 md:p-5 xl:p-6">
         <div className="flex h-full flex-col">
           <div className="space-y-5 sm:space-y-6">
-            <div>
-              <h2 className="mb-3 text-sm sm:text-base font-semibold text-white">
-                Select Variant
-              </h2>
+            {hasVariants && (
+              <div>
+                <h2 className="mb-3 text-sm font-semibold text-white sm:text-base">
+                  Select Variant
+                </h2>
 
-              <div className="space-y-3">
-                {currentProduct.variants?.map((variant) => (
-                  <label
-                    key={variant.id}
-                    className={`flex cursor-pointer flex-col gap-3 rounded-2xl border px-3 sm:px-4 py-3 transition-all duration-300 sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${
-                      selectedVariantId === variant.id
-                        ? "border-red-500 bg-black shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
-                        : "border-white/10 bg-black hover:border-white/20 hover:translate-y-[-1px]"
-                    } ${!variant.isActive ? "opacity-60" : ""}`}
-                  >
-                    <div className="flex items-start gap-3 sm:items-center min-w-0">
-                      <input
-                        type="radio"
-                        name="variant"
-                        checked={selectedVariantId === variant.id}
-                        onChange={() => setSelectedVariantId(variant.id)}
-                        disabled={!variant.isActive}
-                        className="mt-1 sm:mt-0"
-                      />
+                <div className="space-y-3">
+                  {currentProduct.variants?.map((variant) => (
+                    <label
+                      key={variant.id}
+                      className={`flex cursor-pointer flex-col gap-3 rounded-2xl border px-3 py-3 transition-all duration-300 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4 ${
+                        selectedVariantId === variant.id
+                          ? "border-red-500 bg-black shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
+                          : "border-white/10 bg-black hover:translate-y-[-1px] hover:border-white/20"
+                      } ${!variant.isActive ? "opacity-60" : ""}`}
+                    >
+                      <div className="min-w-0 flex items-start gap-3 sm:items-center">
+                        <input
+                          type="radio"
+                          name="variant"
+                          checked={selectedVariantId === variant.id}
+                          onChange={() => setSelectedVariantId(variant.id)}
+                          disabled={!variant.isActive}
+                          className="mt-1 sm:mt-0"
+                        />
 
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white sm:text-base break-words">
-                          {variant.name}
-                        </p>
-                        <p className="text-xs text-white/45">
-                          Stock: {variant.stock}
-                          {!variant.isActive ? " • Unavailable" : ""}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium text-white sm:text-base">
+                            {variant.name}
+                          </p>
+                          <p className="text-xs text-white/45">
+                            Stock: {variant.stock}
+                            {!variant.isActive ? " • Unavailable" : ""}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <p className="text-sm font-semibold text-white sm:text-base sm:pl-4">
-                      Rs. {Number(variant.price || 0)}
-                    </p>
-                  </label>
-                ))}
+                      <p className="text-sm font-semibold text-white sm:pl-4 sm:text-base">
+                        Rs. {Number(variant.price || 0)}
+                      </p>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {hasAddons && (
               <div>
-                <h2 className="mb-3 text-sm sm:text-base font-semibold text-white">
+                <h2 className="mb-3 text-sm font-semibold text-white sm:text-base">
                   Addons
                 </h2>
 
@@ -237,25 +245,25 @@ export default function ProductDetailPage() {
                   {normalizedAddons.map((addon) => (
                     <label
                       key={addon.id}
-                      className={`flex cursor-pointer flex-col gap-3 rounded-2xl border px-3 sm:px-4 py-3 transition-all duration-300 sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${
+                      className={`flex cursor-pointer flex-col gap-3 rounded-2xl border px-3 py-3 transition-all duration-300 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4 ${
                         selectedAddonIds.includes(addon.id)
                           ? "border-red-500 bg-black shadow-[0_0_0_1px_rgba(239,68,68,0.2)]"
-                          : "border-white/10 bg-black hover:border-white/20 hover:translate-y-[-1px]"
+                          : "border-white/10 bg-black hover:translate-y-[-1px] hover:border-white/20"
                       }`}
                     >
-                      <div className="flex items-start gap-3 sm:items-center min-w-0">
+                      <div className="min-w-0 flex items-start gap-3 sm:items-center">
                         <input
                           type="checkbox"
                           checked={selectedAddonIds.includes(addon.id)}
                           onChange={() => handleToggleAddon(addon.id)}
                           className="mt-1 sm:mt-0"
                         />
-                        <span className="text-sm text-white sm:text-base break-words">
+                        <span className="break-words text-sm text-white sm:text-base">
                           {addon.name}
                         </span>
                       </div>
 
-                      <span className="text-sm font-medium text-white sm:text-base sm:pl-4">
+                      <span className="text-sm font-medium text-white sm:pl-4 sm:text-base">
                         Rs. {addon.price}
                       </span>
                     </label>
@@ -264,7 +272,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            <div className="rounded-[18px] sm:rounded-[20px] border border-white/10 bg-black p-4 sm:p-5">
+            <div className="rounded-[18px] border border-white/10 bg-black p-4 sm:rounded-[20px] sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-white/45 sm:text-sm">
@@ -284,9 +292,10 @@ export default function ProductDetailPage() {
             <button
               onClick={handleAddToCart}
               disabled={
-                currentProduct.availability !== "AVAILABLE" || !selectedVariant
+                currentProduct.availability !== "AVAILABLE" ||
+                (hasVariants && !selectedVariant)
               }
-              className="w-full rounded-2xl bg-red-600 px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-white transition-all duration-200 hover:bg-red-500 hover:shadow-[0_10px_30px_rgba(220,38,38,0.3)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-red-500 hover:shadow-[0_10px_30px_rgba(220,38,38,0.3)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:py-3.5 sm:text-base"
             >
               Add to Cart
             </button>
@@ -298,7 +307,7 @@ export default function ProductDetailPage() {
 
   if (loading && !currentProduct) {
     return (
-      <main className="min-h-screen bg-[#050505] px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10 text-white">
+      <main className="min-h-screen bg-[#050505] px-3 py-6 text-white sm:px-4 sm:py-8 md:px-6 md:py-10">
         <div className="mx-auto max-w-7xl">
           <div className="animate-pulse space-y-5">
             <div className="h-10 w-40 rounded-xl bg-white/10" />
@@ -314,7 +323,7 @@ export default function ProductDetailPage() {
 
   if (error && !currentProduct) {
     return (
-      <main className="min-h-screen bg-[#050505] px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10 text-white">
+      <main className="min-h-screen bg-[#050505] px-3 py-6 text-white sm:px-4 sm:py-8 md:px-6 md:py-10">
         <div className="mx-auto max-w-7xl">
           <p className="text-sm text-red-400 sm:text-base">{error}</p>
         </div>
@@ -324,7 +333,7 @@ export default function ProductDetailPage() {
 
   if (!currentProduct) {
     return (
-      <main className="min-h-screen bg-[#050505] px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10 text-white">
+      <main className="min-h-screen bg-[#050505] px-3 py-6 text-white sm:px-4 sm:py-8 md:px-6 md:py-10">
         <div className="mx-auto max-w-7xl">
           <p className="text-sm text-white/70 sm:text-base">Product not found.</p>
         </div>
@@ -334,7 +343,7 @@ export default function ProductDetailPage() {
 
   return (
     <main
-      className={`min-h-screen bg-[#050505] px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10 text-white transition-all duration-500 ease-out ${
+      className={`min-h-screen bg-[#050505] px-3 py-6 text-white transition-all duration-500 ease-out sm:px-4 sm:py-8 md:px-6 md:py-10 ${
         pageVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
       }`}
     >
@@ -342,7 +351,7 @@ export default function ProductDetailPage() {
         <div className="mb-5 sm:mb-6 md:mb-8">
           <Link
             href="/"
-            className="inline-flex items-center rounded-xl border border-white/10 bg-[#111] px-3.5 py-2 text-xs sm:text-sm font-medium text-white transition-all duration-200 hover:border-red-500 hover:text-red-400 active:scale-[0.98] sm:px-4 sm:py-2.5"
+            className="inline-flex items-center rounded-xl border border-white/10 bg-[#111] px-3.5 py-2 text-xs font-medium text-white transition-all duration-200 hover:border-red-500 hover:text-red-400 active:scale-[0.98] sm:px-4 sm:py-2.5 sm:text-sm"
           >
             ← Back to Store
           </Link>
@@ -350,11 +359,11 @@ export default function ProductDetailPage() {
 
         <div className="grid items-start gap-5 sm:gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
           <div className="w-full space-y-6">
-            <section className="overflow-hidden rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#111] shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+            <section className="overflow-hidden rounded-[20px] border border-white/10 bg-[#111] shadow-[0_20px_60px_rgba(0,0,0,0.28)] sm:rounded-[24px]">
               <div className="grid gap-4 p-3 sm:p-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-center xl:grid-cols-[340px_minmax(0,1fr)]">
-                <div className="overflow-hidden rounded-[18px] sm:rounded-[20px] bg-black">
+                <div className="overflow-hidden rounded-[18px] bg-black sm:rounded-[20px]">
                   {currentProduct.imageUrl ? (
-                    <div className="h-[200px] xs:h-[220px] sm:h-[260px] lg:h-[220px] xl:h-[250px] 2xl:h-[270px] w-full">
+                    <div className="h-[200px] w-full xs:h-[220px] sm:h-[260px] lg:h-[220px] xl:h-[250px] 2xl:h-[270px]">
                       <img
                         src={currentProduct.imageUrl}
                         alt={currentProduct.name}
@@ -362,7 +371,7 @@ export default function ProductDetailPage() {
                       />
                     </div>
                   ) : (
-                    <div className="flex h-[200px] xs:h-[220px] sm:h-[260px] lg:h-[220px] xl:h-[250px] 2xl:h-[270px] w-full items-center justify-center bg-[#cf0f2f] text-sm text-white/40">
+                    <div className="flex h-[200px] w-full items-center justify-center bg-[#cf0f2f] text-sm text-white/40 xs:h-[220px] sm:h-[260px] lg:h-[220px] xl:h-[250px] 2xl:h-[270px]">
                       No Image
                     </div>
                   )}
@@ -372,39 +381,44 @@ export default function ProductDetailPage() {
                   <div className="border-b border-white/10 pb-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h1 className="mt-7 sm:mt-4 md:mt-5 text-[22px] sm:text-[28px] md:text-[34px] xl:text-[38px] font-bold leading-tight break-words">
+                        <h1 className="mt-7 break-words text-[22px] font-bold leading-tight sm:mt-4 sm:text-[28px] md:mt-5 md:text-[34px] xl:text-[38px]">
                           {currentProduct.name}
                         </h1>
 
                         {currentProduct.isSpecial && (
-                          <span className="mt-3 inline-flex rounded-full bg-red-600 px-3 py-1 text-xs sm:text-sm font-medium text-white">
+                          <span className="mt-3 inline-flex rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white sm:text-sm">
                             Special
                           </span>
                         )}
                       </div>
 
-                      <div className="shrink-0 rounded-[14px] sm:rounded-[16px] border border-white/10 bg-black px-4 py-3 text-left">
+                      <div className="shrink-0 rounded-[14px] border border-white/10 bg-black px-4 py-3 text-left sm:rounded-[16px]">
                         <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">
                           Price
                         </p>
-                        <p className="mt-2 text-xl sm:text-2xl lg:text-[26px] font-bold text-white whitespace-nowrap">
+                        <p className="mt-2 whitespace-nowrap text-xl font-bold text-white sm:text-2xl lg:text-[26px]">
                           Rs. {lineTotal}
                         </p>
                       </div>
                     </div>
 
                     {hasDescription && (
-                      <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65 sm:text-[15px] sm:leading-7 break-words">
+                      <p className="mt-3 max-w-2xl break-words text-sm leading-6 text-white/65 sm:text-[15px] sm:leading-7">
                         {currentProduct.description}
                       </p>
                     )}
                   </div>
 
                   <div className="mt-4 flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-white/60">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-white/60 sm:gap-3">
                       {selectedVariant && (
                         <span className="rounded-full border border-white/10 bg-black px-3 py-2 text-xs sm:text-sm">
                           Selected: {selectedVariant.name}
+                        </span>
+                      )}
+                      {!hasVariants && (
+                        <span className="rounded-full border border-white/10 bg-black px-3 py-2 text-xs sm:text-sm">
+                          Base Product
                         </span>
                       )}
                       <span className="rounded-full border border-white/10 bg-black px-3 py-2 text-xs sm:text-sm">
@@ -413,7 +427,7 @@ export default function ProductDetailPage() {
                     </div>
 
                     <div>
-                      <h2 className="mb-3 text-sm ml-3  sm:text-base font-semibold text-white">
+                      <h2 className="mb-3 ml-3 text-sm font-semibold text-white sm:text-base">
                         Quantity
                       </h2>
 
@@ -423,19 +437,19 @@ export default function ProductDetailPage() {
                           onClick={() =>
                             setQuantity((prev) => Math.max(1, prev - 1))
                           }
-                          className="flex h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-base sm:text-lg font-semibold transition-all duration-200 hover:border-red-500 hover:scale-[1.03] active:scale-95"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-base font-semibold transition-all duration-200 hover:scale-[1.03] hover:border-red-500 active:scale-95 sm:h-11 sm:w-11 sm:text-lg md:h-12 md:w-12"
                         >
                           -
                         </button>
 
-                        <div className="flex h-10 sm:h-11 md:h-12 min-w-[52px] sm:min-w-[56px] md:min-w-[60px] items-center justify-center rounded-xl border border-white/10 bg-black px-4 text-sm sm:text-base md:text-lg font-semibold text-white">
+                        <div className="flex h-10 min-w-[52px] items-center justify-center rounded-xl border border-white/10 bg-black px-4 text-sm font-semibold text-white sm:h-11 sm:min-w-[56px] sm:text-base md:h-12 md:min-w-[60px] md:text-lg">
                           {quantity}
                         </div>
 
                         <button
                           type="button"
                           onClick={() => setQuantity((prev) => prev + 1)}
-                          className="flex h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-base sm:text-lg font-semibold transition-all duration-200 hover:border-red-500 hover:scale-[1.03] active:scale-95"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-base font-semibold transition-all duration-200 hover:scale-[1.03] hover:border-red-500 active:scale-95 sm:h-11 sm:w-11 sm:text-lg md:h-12 md:w-12"
                         >
                           +
                         </button>
@@ -454,17 +468,17 @@ export default function ProductDetailPage() {
               <section className="w-full pt-1">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-white">
+                    <h2 className="text-xl font-bold text-white sm:text-2xl">
                       More Products
                     </h2>
-                    <p className="mt-1 text-xs sm:text-sm text-white/50">
+                    <p className="mt-1 text-xs text-white/50 sm:text-sm">
                       Explore more items you may like.
                     </p>
                   </div>
 
                   <Link
                     href="/"
-                    className="hidden md:inline-flex rounded-xl border border-white/10 bg-[#111] px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:border-red-500 hover:text-red-400"
+                    className="hidden rounded-xl border border-white/10 bg-[#111] px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:border-red-500 hover:text-red-400 md:inline-flex"
                   >
                     View All
                   </Link>
@@ -474,14 +488,14 @@ export default function ProductDetailPage() {
                   {relatedProducts.map((product) => (
                     <article
                       key={product.id}
-                      className="group overflow-hidden rounded-[16px] sm:rounded-[20px] border border-white/10 bg-[#111] p-2.5 sm:p-3 shadow-[0_12px_35px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1 hover:border-red-500/40"
+                      className="group overflow-hidden rounded-[16px] border border-white/10 bg-[#111] p-2.5 shadow-[0_12px_35px_rgba(0,0,0,0.28)] transition-all duration-300 hover:-translate-y-1 hover:border-red-500/40 sm:rounded-[20px] sm:p-3"
                     >
                       <Link
                         href={`/products/${product.slug}`}
                         prefetch={true}
-                        className="block active:scale-[0.99] transition-transform duration-150"
+                        className="block transition-transform duration-150 active:scale-[0.99]"
                       >
-                        <div className="overflow-hidden rounded-[14px] sm:rounded-[16px] bg-[#0d0d0d]">
+                        <div className="overflow-hidden rounded-[14px] bg-[#0d0d0d] sm:rounded-[16px]">
                           {product.imageUrl ? (
                             <div className="aspect-square w-full">
                               <img
@@ -502,22 +516,22 @@ export default function ProductDetailPage() {
                         <Link
                           href={`/products/${product.slug}`}
                           prefetch={true}
-                          className="block active:scale-[0.99] transition-transform duration-150"
+                          className="block transition-transform duration-150 active:scale-[0.99]"
                         >
-                          <h3 className="min-h-[40px] sm:min-h-[46px] text-xs sm:text-sm font-semibold leading-5 sm:leading-6 text-white transition group-hover:text-red-400 break-words">
+                          <h3 className="min-h-[40px] break-words text-xs font-semibold leading-5 text-white transition group-hover:text-red-400 sm:min-h-[46px] sm:text-sm sm:leading-6">
                             {product.name}
                           </h3>
                         </Link>
 
                         <div className="mt-3 flex flex-col gap-2">
-                          <span className="inline-flex w-fit rounded-lg bg-black px-3 py-2 text-[11px] sm:text-xs md:text-sm font-semibold text-white">
+                          <span className="inline-flex w-fit rounded-lg bg-black px-3 py-2 text-[11px] font-semibold text-white sm:text-xs md:text-sm">
                             Rs. {getCardPrice(product)}
                           </span>
 
                           <Link
                             href={`/products/${product.slug}`}
                             prefetch={true}
-                            className="inline-flex w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-[11px] sm:text-xs md:text-sm font-semibold text-white transition-all duration-200 hover:bg-red-500 active:scale-[0.98]"
+                            className="inline-flex w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-[11px] font-semibold text-white transition-all duration-200 hover:bg-red-500 active:scale-[0.98] sm:text-xs md:text-sm"
                           >
                             View
                           </Link>
