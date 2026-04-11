@@ -119,7 +119,7 @@ export default function ProductFormFields({
             value={form.categoryId}
             onChange={(e) => updateField("categoryId", e.target.value)}
             disabled={loading}
-            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50"
           >
             <option value="">Select category</option>
             {categories

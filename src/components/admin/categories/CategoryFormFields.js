@@ -25,7 +25,7 @@ export default function CategoryFormFields({
           onChange={(e) => updateField("name", e.target.value)}
           placeholder="Enter category name"
           disabled={loading}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50"
         />
         {errors?.name ? (
           <p className="mt-1 text-sm text-rose-600">{errors.name}</p>
@@ -42,7 +42,7 @@ export default function CategoryFormFields({
           placeholder="Optional description"
           disabled={loading}
           rows={4}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none disabled:bg-slate-50"
         />
       </div>
 

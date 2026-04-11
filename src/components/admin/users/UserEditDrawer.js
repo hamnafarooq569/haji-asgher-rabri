@@ -65,7 +65,7 @@ export default function UserEditDrawer({
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-11 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-slate-400"
+              className="h-11 w-full rounded-2xl border border-slate-200 px-4 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400"
               required
             />
           </div>
@@ -78,7 +78,7 @@ export default function UserEditDrawer({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-11 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-slate-400"
+              className="h-11 w-full rounded-2xl border border-slate-200 px-4 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400"
               required
             />
           </div>
@@ -90,7 +90,7 @@ export default function UserEditDrawer({
             <select
               value={roleId}
               onChange={(e) => setRoleId(e.target.value)}
-              className="h-11 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-slate-400"
+              className="h-11 w-full rounded-2xl border border-slate-200 px-4 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400"
             >
               <option value="">Select role</option>
               {roles.map((role) => (

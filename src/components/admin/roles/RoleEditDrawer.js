@@ -132,7 +132,7 @@ export default function RoleEditDrawer({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400"
             />
           </div>
 

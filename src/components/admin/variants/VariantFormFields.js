@@ -24,7 +24,7 @@ export default function VariantFormFields({
           value={form.productId}
           onChange={(e) => updateField("productId", e.target.value)}
           disabled={loading}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none disabled:bg-slate-50"
         >
           <option value="">Select product</option>
           {products.map((product) => (
@@ -39,7 +39,7 @@ export default function VariantFormFields({
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+        <label className="mb-2 block text-sm  font-medium text-slate-700">
           Variant Name
         </label>
         <input
@@ -48,7 +48,7 @@ export default function VariantFormFields({
           onChange={(e) => updateField("name", e.target.value)}
           placeholder="e.g. 250g / Small / 1kg"
           disabled={loading}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none disabled:bg-slate-50"
         />
         {errors?.name ? (
           <p className="mt-1 text-sm text-rose-600">{errors.name}</p>
@@ -67,7 +67,7 @@ export default function VariantFormFields({
             onChange={(e) => updateField("price", e.target.value)}
             placeholder="0"
             disabled={loading}
-            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50"
           />
           {errors?.price ? (
             <p className="mt-1 text-sm text-rose-600">{errors.price}</p>
@@ -100,7 +100,7 @@ export default function VariantFormFields({
             onChange={(e) => updateField("stock", e.target.value)}
             placeholder="0"
             disabled={loading}
-            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50"
           />
           {errors?.stock ? (
             <p className="mt-1 text-sm text-rose-600">{errors.stock}</p>
@@ -119,7 +119,7 @@ export default function VariantFormFields({
           onChange={(e) => updateField("sortOrder", e.target.value)}
           placeholder="0"
           disabled={loading}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50"
         />
       </div>
 

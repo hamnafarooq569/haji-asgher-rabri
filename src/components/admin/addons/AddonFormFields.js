@@ -25,7 +25,7 @@ export default function AddonFormFields({
           onChange={(e) => updateField("name", e.target.value)}
           placeholder="Enter addon name"
           disabled={loading}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none disabled:bg-slate-50"
         />
         {errors?.name ? (
           <p className="mt-1 text-sm text-rose-600">{errors.name}</p>
@@ -43,7 +43,7 @@ export default function AddonFormFields({
           onChange={(e) => updateField("price", e.target.value)}
           placeholder="Enter addon price"
           disabled={loading}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none disabled:bg-slate-50"
+          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none disabled:bg-slate-50"
         />
         {errors?.price ? (
           <p className="mt-1 text-sm text-rose-600">{errors.price}</p>

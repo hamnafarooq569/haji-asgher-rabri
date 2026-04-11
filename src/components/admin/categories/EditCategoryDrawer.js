@@ -81,7 +81,7 @@ export default function EditCategoryDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 text-sm"
           >
             Close
           </button>
