@@ -128,7 +128,7 @@ export default function OrderCustomerEditDrawer({
               name="code"
               value={form.code}
               disabled
-              className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-sm outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
             />
           </div>
 
@@ -141,7 +141,7 @@ export default function OrderCustomerEditDrawer({
                 name="fulfillmentType"
                 value={form.fulfillmentType}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               >
                 {FULFILLMENT_TYPE_OPTIONS.map((item) => (
                   <option key={item} value={item}>
@@ -159,7 +159,7 @@ export default function OrderCustomerEditDrawer({
                 name="paymentMethod"
                 value={form.paymentMethod}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               >
                 {PAYMENT_METHOD_OPTIONS.map((item) => (
                   <option key={item} value={item}>
@@ -177,7 +177,7 @@ export default function OrderCustomerEditDrawer({
                 name="paymentStatus"
                 value={form.paymentStatus}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               >
                 {PAYMENT_STATUS_OPTIONS.map((item) => (
                   <option key={item} value={item}>
@@ -195,7 +195,7 @@ export default function OrderCustomerEditDrawer({
                 name="orderStatus"
                 value={form.orderStatus}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               >
                 {ORDER_STATUS_OPTIONS.map((item) => (
                   <option key={item} value={item}>
@@ -216,7 +216,7 @@ export default function OrderCustomerEditDrawer({
                 name="customerName"
                 value={form.customerName}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               />
             </div>
 
@@ -229,7 +229,7 @@ export default function OrderCustomerEditDrawer({
                 name="mobile"
                 value={form.mobile}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               />
             </div>
 
@@ -242,7 +242,7 @@ export default function OrderCustomerEditDrawer({
                 name="altMobile"
                 value={form.altMobile}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               />
             </div>
 
@@ -255,7 +255,7 @@ export default function OrderCustomerEditDrawer({
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
               />
             </div>
 
@@ -270,7 +270,7 @@ export default function OrderCustomerEditDrawer({
                     name="nearestLandmark"
                     value={form.nearestLandmark}
                     onChange={handleChange}
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
                   />
                 </div>
 
@@ -283,7 +283,7 @@ export default function OrderCustomerEditDrawer({
                     value={form.deliveryAddress}
                     onChange={handleChange}
                     rows={3}
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
                   />
                 </div>
 
@@ -296,7 +296,7 @@ export default function OrderCustomerEditDrawer({
                     value={form.deliveryNotes}
                     onChange={handleChange}
                     rows={4}
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
                   />
                 </div>
               </>

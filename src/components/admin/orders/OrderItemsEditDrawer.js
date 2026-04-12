@@ -214,7 +214,7 @@ export default function OrderItemsEditDrawer({
               type="text"
               value={order?.orderNumber || ""}
               disabled
-              className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-sm outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
             />
           </div>
 
@@ -274,7 +274,7 @@ export default function OrderItemsEditDrawer({
                               onChange={(e) =>
                                 handleQuantityChange(item.localId, e.target.value)
                               }
-                              className="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                              className="w-20 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 text-sm"
                             />
                           </div>
 
@@ -348,7 +348,7 @@ export default function OrderItemsEditDrawer({
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   placeholder="Search By Name"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm outline-none"
                 />
               </div>
 
